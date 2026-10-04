@@ -12,20 +12,15 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<link rel="preload" href="fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/Fredoka-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/barlow-condensed-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/barlow-condensed-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-/* Polices intégrées à l'appli (fonctionnent sans réseau), licence SIL OFL 1.1 :
-   Fredoka, ronde comme le logo, pour les titres, prix et boutons ; Geist pour les petits textes */
-@font-face {
-  font-family: "Fredoka"; src: url("fonts/Fredoka-Variable.woff2") format("woff2");
-  font-weight: 300 700; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: "Geist"; src: url("fonts/Geist-Variable.woff2") format("woff2");
-  font-weight: 100 900; font-style: normal; font-display: swap;
-}
-/* Layout : grille de tuiles tactiles par rayon, barre d'addition fixée en bas, feuille d'encaissement qui monte du bas */
+/* Barlow Condensed (licence SIL OFL 1.1), intégrée à l'appli : elle fonctionne aussi sans réseau.
+   Police étroite, façon menu de bar : les noms longs tiennent sur une ligne. */
+@font-face { font-family: "Barlow Condensed"; src: url("fonts/barlow-condensed-latin-400-normal.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Barlow Condensed"; src: url("fonts/barlow-condensed-latin-500-normal.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Barlow Condensed"; src: url("fonts/barlow-condensed-latin-600-normal.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Barlow Condensed"; src: url("fonts/barlow-condensed-latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: swap; }
 :root {
   /* Charte du logo 3T : blanc et rose framboise #EC005C, comme le logo. Un seul thème, clair. */
   color-scheme: light;
@@ -41,14 +36,14 @@
   --ok: #ec005c;
   --warn: #b4441c;
   --shadow: 0 1px 2px rgba(120, 0, 50, .07), 0 4px 14px rgba(120, 0, 50, .06);
-  --display: "Fredoka", "Geist", -apple-system, "Segoe UI", system-ui, sans-serif;
-  --body: "Geist", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
 }
 [hidden] { display: none !important; }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { min-height: 100%; }
 body {
-  background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px;
+  background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px;
   padding: 0 16px; padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px));
   max-width: 900px; margin: 0 auto;
   font-variant-numeric: tabular-nums;
@@ -115,10 +110,10 @@ section.rayon h2 {
 }
 .tile:active { transform: scale(.97); }
 .tile.has { border-color: var(--wine-text); background: var(--wine-soft); }
-.tile .name { font-family: var(--display); font-weight: 500; font-size: 1.08rem; line-height: 1.2; padding-right: 34px; overflow-wrap: anywhere; }
-.tile .desc { font-size: .74rem; color: var(--muted); line-height: 1.25; }
+.tile .name { font-family: var(--display); font-weight: 600; font-size: 1.25rem; line-height: 1.1; padding-right: 34px; overflow-wrap: anywhere; }
+.tile .desc { font-size: .88rem; color: var(--muted); line-height: 1.25; }
 .tile.has .desc { padding-right: 46px; }
-.tile .price { font-family: var(--display); font-weight: 600; font-size: 1.25rem; color: var(--wine-text); }
+.tile .price { font-family: var(--display); font-weight: 700; font-size: 1.45rem; color: var(--wine-text); }
 .tile .qty {
   position: absolute; top: 10px; right: 10px; min-width: 30px; height: 30px; border-radius: 999px;
   background: var(--wine); color: var(--wine-ink); font-weight: 700; display: grid; place-items: center;
@@ -174,7 +169,7 @@ section.rayon h2 {
 .note-card.on { border-color: var(--wine-text); background: var(--wine-soft); }
 .note-card .nc-head { display: flex; justify-content: space-between; gap: 10px; font-size: 1.05rem; }
 .note-card .nc-head span { font-family: var(--display); font-weight: 600; color: var(--wine-text); }
-.note-card small { color: var(--muted); font-size: .8rem; overflow-wrap: anywhere; }
+.note-card small { color: var(--muted); font-size: .92rem; overflow-wrap: anywhere; }
 .note-card em { font-style: normal; font-size: .72rem; font-weight: 700; color: var(--wine-text); text-transform: uppercase; letter-spacing: .08em; }
 .note-chip.add { border-style: dashed; color: var(--muted); font-weight: 500; }
 .cal-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -198,7 +193,7 @@ section.rayon h2 {
 .bar-in { max-width: 868px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
 .bar .sum { flex: 1; min-width: 0; }
 .bar .sum small { display: block; color: var(--muted); font-size: .8rem; }
-.bar .sum strong { font-family: var(--display); font-weight: 700; font-size: 1.9rem; line-height: 1;  }
+.bar .sum strong { font-family: var(--display); font-weight: 700; font-size: 2.3rem; line-height: 1;  }
 .btn {
   border: 0; border-radius: 12px; padding: 14px 18px; font-family: var(--display); font-weight: 600; font-size: 1.05rem;
   background: var(--wine); color: var(--wine-ink); min-height: 52px;
@@ -219,16 +214,16 @@ section.rayon h2 {
 @keyframes up { from { transform: translateY(30px); } to { transform: none; } }
 @media (prefers-reduced-motion: reduce) { .sheet { animation: none; } .tile { transition: none; } }
 .grab { width: 42px; height: 5px; border-radius: 3px; background: var(--line); margin: 4px auto 0; }
-.sheet h3 { font-family: var(--display); font-weight: 700; font-size: 1.35rem; margin: 0;  }
+.sheet h3 { font-family: var(--display); font-weight: 700; font-size: 1.6rem; margin: 0;  }
 .ticket { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 6px 14px; }
 .ticket .row { display: grid; grid-template-columns: 2.2em 1fr auto; gap: 8px; padding-block: 9px; border-bottom: 1px dashed var(--line); align-items: baseline; }
 .ticket .row:last-child { border-bottom: 0; }
 .ticket .row .q { font-weight: 700; color: var(--wine-text); }
 .ticket .row .l { min-width: 0; overflow-wrap: anywhere; }
-.ticket .row .l small { color: var(--muted); display: block; font-size: .75rem; }
+.ticket .row .l small { color: var(--muted); display: block; font-size: .88rem; }
 .ticket .total { display: flex; justify-content: space-between; align-items: baseline; padding-block: 12px 8px; border-top: 2px solid var(--ink); margin-top: 4px; }
 .ticket .total span { font-weight: 700; text-transform: uppercase; letter-spacing: .08em; font-size: .8rem; }
-.ticket .total strong { font-family: var(--display); font-size: 2rem; font-weight: 700;  }
+.ticket .total strong { font-family: var(--display); font-size: 2.4rem; font-weight: 700;  }
 
 .label { font-size: .78rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 700; }
 .seg { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
@@ -271,7 +266,7 @@ section.rayon h2 {
 .hist .row { display: flex; justify-content: space-between; padding-block: 8px; border-bottom: 1px dashed var(--line); gap: 10px; }
 .hist .row { align-items: center; }
 .hist .h-main { flex: 1; min-width: 0; color: var(--ink); }
-.hist .h-main small { display: block; color: var(--muted); font-size: .75rem; overflow-wrap: anywhere; }
+.hist .h-main small { display: block; color: var(--muted); font-size: .88rem; overflow-wrap: anywhere; }
 .hist .h-amt { font-weight: 700; white-space: nowrap; }
 .hist .h-del { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 8px; font-size: .75rem; color: var(--muted); }
 .hist .h-del.armed { border-color: var(--warn); color: var(--warn); }
@@ -1039,7 +1034,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   if (!owner) openOwner(true);
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 26;
+const APP_VERSION = 27;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale

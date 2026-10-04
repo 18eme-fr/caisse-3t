@@ -1,8 +1,9 @@
 // Garde l'appli disponible sans réseau.
 // La page est toujours demandée au réseau d'abord (version la plus récente),
 // la copie locale ne sert que lorsqu'il n'y a pas de connexion.
-const CACHE = "caisse-3t-v24";
-const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png", "logo.png", "fonts/Geist-Variable.woff2", "fonts/Fredoka-Variable.woff2"];
+const CACHE = "caisse-3t-v25";
+const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png", "logo.png", "fonts/barlow-condensed-latin-400-normal.woff2", "fonts/barlow-condensed-latin-500-normal.woff2",
+  "fonts/barlow-condensed-latin-600-normal.woff2", "fonts/barlow-condensed-latin-700-normal.woff2"];
 
 self.addEventListener("install", e => {
   // cache: "reload" contourne le cache HTTP du navigateur, sinon une ancienne page pourrait être recopiée
