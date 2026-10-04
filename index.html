@@ -285,7 +285,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
 <script>
 (() => {
   const RAYONS = ["Ardoises", "Vins", "Bières", "Cocktails", "Softs", "Divers"];
-  const MENU_VERSION = 9;
+  const MENU_VERSION = 10;
   const SIROPS = ["Menthe", "Pêche", "Citron", "Fraise", "Grenadine", "Cassis"];
   const DEFAULT_MENU = [
     { id: "a1", cat: "Ardoises", name: "Ardoise fromage", desc: "Simple", price: 14 },
@@ -310,6 +310,8 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
     { id: "k8", cat: "Bières", name: "Panaché", desc: "Pinte 50 cl", price: 9 },
     { id: "k9", cat: "Bières", name: "Monaco", desc: "Demi 25 cl", price: 5 },
     { id: "k10", cat: "Bières", name: "Monaco", desc: "Pinte 50 cl", price: 9 },
+    { id: "k11", cat: "Bières", name: "Cidre doux", desc: "", price: 5 },
+    { id: "k12", cat: "Bières", name: "Cidre brut", desc: "", price: 5 },
     { id: "c1", cat: "Cocktails", name: "Aperol Spritz", desc: "", price: 10 },
     { id: "c2", cat: "Cocktails", name: "Bellini Spritz", desc: "", price: 10 },
     { id: "s1", cat: "Softs", name: "Coca-Cola", desc: "", price: 4 },
@@ -877,7 +879,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   render();
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 13;
+const APP_VERSION = 14;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
