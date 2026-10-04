@@ -508,7 +508,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   function summarize(list) {
     const byMode = {}, byItem = {};
     list.forEach(x => {
-      byMode[x.mode] = (byMode[x.mode] || 0) + x.total;
+      if (x.mode) byMode[x.mode] = (byMode[x.mode] || 0) + x.total;
       x.lines.forEach(l => byItem[l.n] = (byItem[l.n] || 0) + l.q);
     });
     return { total: list.reduce((a, x) => a + x.total, 0), count: list.length, byMode, byItem };
@@ -823,68 +823,38 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   $("#scrim").addEventListener("click", closeSheet);
 
   // Addition
-  let payMode = "Espèces", given = 0;
-  $("#btn-pay").addEventListener("click", () => { payMode = "Espèces"; given = 0; renderPay(); });
+  // Addition : récapitulatif de la note, puis « Fermer la note » (pas de saisie du paiement)
+  $("#btn-pay").addEventListener("click", renderPay);
 
   function renderPay() {
     const t = total();
     const rows = lines().map(l => `<div class="row row-edit"><span class="q">${l.q}×</span><span class="l">${esc(label(l))}<small>${eur(l.price)} l'unité · ${eur(l.q * l.price)}</small></span>
       <span class="stepper"><button type="button" data-line="${esc(l.key)}" data-d="-1" aria-label="Retirer un ${esc(label(l))}">−</button><button type="button" data-line="${esc(l.key)}" data-d="1" aria-label="Ajouter un ${esc(label(l))}">+</button></span></div>`).join("");
-    const diff = given - t;
-    const cashBlock = payMode === "Espèces" ? `
-      <div class="label">Somme reçue</div>
-      <div class="cash">
-        ${[t, 20, 50, 100].map((v, i) => `<button type="button" data-cash="${v}">${i === 0 ? "Compte juste" : v + " €"}</button>`).join("")}
-        ${[5, 10].map(v => `<button type="button" data-cashadd="${v}">+${v} €</button>`).join("")}
-        <button type="button" data-cashadd="2">+2 €</button>
-        <button type="button" data-cash="0">Effacer</button>
-      </div>
-      <div class="given"><input id="given" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Montant donné" value="${given || ""}"></div>
-      <div class="change" id="change"><span></span><strong></strong></div>` : "";
     openSheet(`
       <h3>Addition${notes.length > 1 || active().name !== "Note 1" ? " · " + esc(active().name) : ""}</h3>
       <div class="ticket">${rows}
         <div class="total"><span>Total</span><strong>${eur(t)}</strong></div>
       </div>
-      <div class="label">Paiement</div>
-      <div class="seg">${["Espèces", "CB"].map(m => `<button type="button" data-mode="${m}" aria-pressed="${m === payMode}">${m}</button>`).join("")}</div>
-      ${cashBlock}
       <div class="actions">
         <button class="btn ghost" type="button" data-close>Retour</button>
         <button class="btn ok" type="button" data-done id="btn-done">Fermer la note · ${eur(t)}</button>
       </div>`);
-    const inp = $("#given");
-    if (inp) inp.oninput = () => { given = parseFloat(inp.value.replace(",", ".")) || 0; updateChange(); };
-    updateChange();
   }
-  // Monnaie à rendre, mise à jour à chaque chiffre tapé
-  function updateChange() {
-    const box = $("#change"), done = $("#btn-done");
-    const diff = Math.round((given - total()) * 100) / 100;
-    if (box) {
-      box.className = "change" + (given ? (diff >= 0 ? " pos" : " neg") : "");
-      box.querySelector("span").textContent = given && diff < 0 ? "Il manque" : "À rendre";
-      box.querySelector("strong").textContent = given ? eur(Math.abs(diff)) : "—";
-    }
-    if (done) done.disabled = payMode === "Espèces" && given > 0 && diff < 0;
-  }
+
 
   $("#sheet").addEventListener("click", e => {
     const t = e.target.closest("button"); if (!t) return;
     if (t.hasAttribute("data-close")) return closeSheet();
     if (t.dataset.pick) { bump(pickId + "::" + t.dataset.pick, 1); closeSheet(); toast(`${byId(pickId).name} · ${t.dataset.pick}`); return; }
     if (t.dataset.unpick) { bump(pickId + "::" + t.dataset.unpick, -1); return openPick(pickId); }
-    if (t.dataset.mode) { payMode = t.dataset.mode; return renderPay(); }
     if (t.dataset.line) { bump(t.dataset.line, +t.dataset.d); return count() ? renderPay() : closeSheet(); }
     if (t.dataset.cancel) return cancelSale(t);
     if (t.hasAttribute("data-copy")) return copyRecap();
-    if (t.dataset.cash !== undefined) { given = +t.dataset.cash; return renderPay(); }
-    if (t.dataset.cashadd) { given = Math.round((given + +t.dataset.cashadd) * 100) / 100; return renderPay(); }
     if (t.hasAttribute("data-done")) {
       const tot = total();
       if (!tot && !count()) return closeSheet();
       const name = active().name;
-      sales.push({ t: Date.now(), total: tot, mode: payMode, note: name, lines: lines().map(l => ({ n: label(l), q: l.q, p: l.price })) });
+      sales.push({ t: Date.now(), total: tot, mode: "", note: name, lines: lines().map(l => ({ n: label(l), q: l.q, p: l.price })) });
       closeNote(); save(); closeSheet(); render();
       toast(`${name} fermée : ${eur(tot)}` + (notes.length > 1 || !isEmpty(active()) ? ` · ${active().name} affichée` : ""));
       return;
@@ -968,13 +938,13 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
       <h3>Soirée du ${fmtDay(serviceDay())}</h3>
       <p class="note">${owner ? `Caisse de <b>${esc(owner)}</b> · ` : ""}<button type="button" class="linkish" data-owner>${owner ? "Changer le nom" : "Donner un nom à cette caisse"}</button></p>
       <div class="ticket">
-        ${Object.entries(sm.byMode).map(([m, v]) => `<div class="row"><span></span><span class="l">${m}</span><span>${eur(v)}</span></div>`).join("") || `<p class="note" style="padding-block:10px">Aucune commande encaissée ce soir.</p>`}
+        ${Object.entries(sm.byMode).map(([m, v]) => `<div class="row"><span></span><span class="l">${m}</span><span>${eur(v)}</span></div>`).join("")}${sm.count ? "" : `<p class="note" style="padding-block:10px">Aucune note fermée ce soir.</p>`}
         <div class="total"><span>${sm.count} commande${sm.count > 1 ? "s" : ""}</span><strong>${eur(sm.total)}</strong></div>
       </div>
       ${items.length ? `<div class="label">Produits vendus</div><div class="ticket">${items.map(([n, q]) => `<div class="row"><span class="q">${q}×</span><span class="l">${esc(n)}</span><span></span></div>`).join("")}</div>` : ""}
       ${s.length ? `<div class="label">Commandes</div><div class="hist">${s.slice().reverse().map(x => `
         <div class="row">
-          <span class="h-main"><b>${time(x.t)}</b>${x.note && x.note !== "Note 1" ? " · " + esc(x.note) : ""} · ${x.mode}<small>${esc(x.lines.map(l => (l.q > 1 ? l.q + "× " : "") + l.n).join(", "))}</small></span>
+          <span class="h-main"><b>${time(x.t)}</b>${x.note && x.note !== "Note 1" ? " · " + esc(x.note) : ""}${x.mode ? " · " + x.mode : ""}<small>${esc(x.lines.map(l => (l.q > 1 ? l.q + "× " : "") + l.n).join(", "))}</small></span>
           <span class="h-amt">${eur(x.total)}</span>
           <button type="button" class="h-del" data-cancel="${x.t}" aria-label="Annuler cette commande">Annuler</button>
         </div>`).join("")}</div>` : ""}
@@ -983,7 +953,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
         <button class="btn danger" type="button" data-reset-day ${s.length ? "" : "disabled"}>Clôturer la soirée</button>
       </div>
       ${closed.length ? `<div class="label">Soirées précédentes</div><div class="hist">${closed.slice(0, 3).map(c => `
-        <div class="row"><span class="h-main">${fmtDay(c.day)}<small>${c.count} commande${c.count > 1 ? "s" : ""} · ${Object.entries(c.byMode).map(([m, v]) => m + " " + eur(v)).join(" · ")}</small></span><span class="h-amt">${eur(c.total)}</span></div>`).join("")}</div>
+        <div class="row"><span class="h-main">${fmtDay(c.day)}<small>${c.count} commande${c.count > 1 ? "s" : ""}${Object.entries(c.byMode).map(([m, v]) => " · " + m + " " + eur(v)).join("")}</small></span><span class="h-amt">${eur(c.total)}</span></div>`).join("")}</div>
       <button class="btn ghost" type="button" data-opencal>Voir le calendrier des soirées</button>` : ""}
       <p class="note">La soirée va jusqu'à 6 h du matin. Les ventes sont gardées sur ce téléphone uniquement. Version de l’appli : ${APP_VERSION}.</p>
       <button class="btn ghost" type="button" data-close>Fermer</button>
@@ -1133,7 +1103,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   if (!owner) openOwner(true);
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 46;
+const APP_VERSION = 47;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
