@@ -140,7 +140,6 @@ section.rayon h2 {
 }
 .bar .sum small { color: #fff !important; opacity: .85; }
 .bar #btn-pay { background: #fff; color: var(--wine); }
-.bar #btn-clear { background: transparent; color: #fff; border: 1.5px solid rgba(255, 255, 255, .6); }
 .bar .note-chip { background: transparent; color: #fff; border-color: rgba(255, 255, 255, .55); }
 .bar .note-chip small { color: #fff; opacity: .85; }
 .bar .note-chip.on { background: #fff; color: var(--wine); border-color: #fff; }
@@ -340,7 +339,6 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
       <small id="bar-count">Commande vide</small>
       <strong id="bar-total">0,00 €</strong>
     </div>
-    <button class="btn ghost" id="btn-clear" type="button">Vider</button>
     <button class="btn" id="btn-pay" type="button">Addition</button>
   </div>
 </div>
@@ -658,7 +656,6 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
     $("#bar-count").textContent = (notes.length > 1 ? `‹ ${i + 1}/${notes.length} › · ` : "") + (c ? `${c} article${c > 1 ? "s" : ""}` : "Note vide");
     $("#bar-total").textContent = eur(total());
     $("#btn-pay").disabled = !c;
-    $("#btn-clear").disabled = !c;
   }
 
   function measureHead() {
@@ -772,16 +769,6 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
     if (others) openNotesList("Choisir la note suivante");
   }
 
-  // Vider (avec confirmation intégrée)
-  $("#btn-clear").addEventListener("click", e => {
-    const b = e.currentTarget;
-    if (b.dataset.armed) {
-      Object.keys(order).forEach(k => delete order[k]); save(); render(); delete b.dataset.armed; b.textContent = "Vider"; toast("Note vidée");
-    } else {
-      b.dataset.armed = "1"; b.textContent = "Sûr ?";
-      setTimeout(() => { delete b.dataset.armed; b.textContent = "Vider"; }, 2500);
-    }
-  });
 
   $("#btn-edit").addEventListener("click", e => {
     editing = !editing; e.currentTarget.setAttribute("aria-pressed", editing);
@@ -1174,7 +1161,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   if (!owner) openOwner(true);
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 44;
+const APP_VERSION = 45;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
