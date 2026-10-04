@@ -225,7 +225,14 @@ section.rayon h2 {
   .sheet, .sheet.center, .sheet.closing, .scrim, .scrim.closing { animation: none; }
   .tile, .toast, .note-chip { transition: none; }
 }
-.grab { width: 42px; height: 5px; border-radius: 3px; background: var(--line); margin: 4px auto 0; }
+/* Poignée : toucher pour fermer, ou glisser la fenêtre vers le bas */
+.grab {
+  position: sticky; top: -8px; z-index: 2; display: flex; justify-content: center; align-items: center;
+  width: calc(100% + 32px); height: 34px; margin: -8px -16px -10px; padding: 0; border: 0;
+  background: var(--bg); border-radius: 20px 20px 0 0; touch-action: none; cursor: grab;
+}
+.grab::before { content: ""; width: 46px; height: 6px; border-radius: 3px; background: var(--line); transition: background-color .15s, width .15s; }
+.grab:active::before, .sheet.dragging .grab::before { background: var(--wine); width: 56px; }
 .sheet h3 { font-family: var(--display); font-weight: 700; font-size: 1.6rem; margin: 0;  }
 .ticket { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 6px 14px; }
 .ticket .row { display: grid; grid-template-columns: 2.2em 1fr auto; gap: 8px; padding-block: 9px; border-bottom: 1px dashed var(--line); align-items: baseline; }
@@ -751,7 +758,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   let closeTimer = null;
   function openSheet(html, opts = {}) {
     const sh = $("#sheet"), sc = $("#scrim");
-    const content = (opts.center ? "" : `<div class="grab"></div>`) + html;
+    const content = (opts.center ? "" : `<button type="button" class="grab" data-close aria-label="Fermer"></button>`) + html;
     const wasOpen = !sh.hidden && !sh.classList.contains("closing") && sh.classList.contains("center") === !!opts.center;
     clearTimeout(closeTimer);
     sheetLocked = !!opts.locked;
@@ -764,11 +771,60 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   function closeSheet() {
     const sh = $("#sheet"), sc = $("#scrim");
     if (sheetLocked || sh.hidden || sh.classList.contains("closing")) return;
-    sh.classList.add("closing"); sc.classList.add("closing");
+    if (sh.style.transform) {
+      // fenêtre en cours de glissé : elle continue sa course vers le bas
+      sh.classList.add("closing"); sh.style.animation = "none";
+      sh.style.transition = "transform .2s cubic-bezier(.4, 0, 1, 1)"; sh.style.transform = "translateY(100%)";
+      sc.style.transition = "opacity .2s"; sc.style.opacity = "0";
+      closeTimer = setTimeout(() => {
+        sh.hidden = true; sc.hidden = true; sh.classList.remove("closing");
+        for (const el of [sh, sc]) { el.style.transition = ""; el.style.transform = ""; el.style.opacity = ""; el.style.animation = ""; }
+      }, 200);
+      return;
+    }
+    sh.style.animation = ""; sh.classList.add("closing"); sc.classList.add("closing");
     const ms = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 220;
     closeTimer = setTimeout(() => { sh.hidden = true; sc.hidden = true; sh.classList.remove("closing"); sc.classList.remove("closing"); }, ms);
   }
   $("#scrim").addEventListener("click", closeSheet);
+  {
+    const sh = $("#sheet"), sc = $("#scrim");
+    let y0 = null, dy = 0, t0 = 0, dragging = false;
+    sh.addEventListener("touchstart", e => {
+      if (sheetLocked || sh.classList.contains("center") || sh.classList.contains("closing")) return;
+      const fromGrab = !!e.target.closest(".grab");
+      if (!fromGrab && (sh.scrollTop > 0 || e.target.closest("input, textarea, select"))) return;
+      y0 = e.touches[0].clientY; dy = 0; t0 = Date.now(); dragging = false;
+    }, { passive: true });
+    sh.addEventListener("touchmove", e => {
+      if (y0 === null) return;
+      const d = e.touches[0].clientY - y0;
+      if (!dragging) {
+        if (d < -4) { y0 = null; return; }          // geste vers le haut : on laisse défiler
+        if (d < 8) return;
+        dragging = true; sh.classList.add("dragging"); sh.style.animation = "none"; sh.style.transition = "none";
+      }
+      e.preventDefault();
+      dy = Math.max(0, d);
+      sh.style.transform = `translateY(${dy}px)`;
+      sc.style.opacity = String(Math.max(.25, 1 - dy / 500));
+    }, { passive: false });
+    const end = () => {
+      if (y0 === null) return;
+      y0 = null;
+      if (!dragging) return;
+      dragging = false; sh.classList.remove("dragging");
+      const speed = dy / Math.max(1, Date.now() - t0);
+      if (dy > 110 || speed > .5) return closeSheet();
+      // pas assez loin : la fenêtre remonte en place
+      sh.style.transition = "transform .28s cubic-bezier(.22, 1, .36, 1)"; sh.style.transform = "";
+      sc.style.transition = "opacity .28s"; sc.style.opacity = "";
+      // l'animation d'ouverture reste coupée jusqu'à la prochaine ouverture (sinon elle se rejouerait)
+      setTimeout(() => { sh.style.transition = ""; sc.style.transition = ""; }, 300);
+    };
+    sh.addEventListener("touchend", end);
+    sh.addEventListener("touchcancel", end);
+  }
 
   // Addition
   let payMode = "Espèces", given = 0;
@@ -1084,7 +1140,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   if (!owner) openOwner(true);
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 28;
+const APP_VERSION = 29;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
