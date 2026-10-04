@@ -2,6 +2,7 @@
 
 Caisse tactile pour prendre les commandes au café-théâtre des 3T (Toulouse) : ardoises, vins, bières, softs.
 Un toucher ajoute un produit, l'addition calcule le total et la monnaie à rendre, et l'écran « Soirée » donne le total encaissé.
+Plusieurs notes peuvent rester ouvertes en même temps (une par table ou par client), avec paiement en espèces ou par CB.
 
 **Ouvrir l'appli :** https://18eme-fr.github.io/caisse-3t/
 
