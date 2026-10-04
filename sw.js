@@ -1,7 +1,7 @@
 // Garde l'appli disponible sans réseau.
 // La page est toujours demandée au réseau d'abord (version la plus récente),
 // la copie locale ne sert que lorsqu'il n'y a pas de connexion.
-const CACHE = "caisse-3t-v16";
+const CACHE = "caisse-3t-v17";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png", "logo.png"];
 
 self.addEventListener("install", e => {
@@ -30,7 +30,7 @@ self.addEventListener("fetch", e => {
   if (isPage) {
     e.waitUntil(cleanup());
     e.respondWith(
-      fetch(req, { cache: "no-store" })
+      fetch(url.pathname + "?fresh=" + Date.now(), { cache: "no-store" })
         .then(res => {
           if (res.ok) caches.open(CACHE).then(c => c.put("index.html", res.clone()));
           return res;

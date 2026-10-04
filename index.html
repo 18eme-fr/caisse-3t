@@ -976,7 +976,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   render();
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 18;
+const APP_VERSION = 19;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
@@ -987,10 +987,13 @@ async function checkForUpdate() {
     if (!res.ok) return;
     const { version } = await res.json();
     if (!(version > APP_VERSION)) return;
-    // Une seule tentative par numéro, pour ne jamais boucler si le serveur sert encore l'ancienne page
+    // Juste après une publication, GitHub peut encore servir l'ancienne page quelques minutes :
+    // on réessaie alors toutes les 30 secondes au plus, sans jamais boucler
     const key = "3t-tried-" + version;
-    if (sessionStorage.getItem(key)) return;
-    sessionStorage.setItem(key, "1");
+    let tries = {};
+    try { tries = JSON.parse(sessionStorage.getItem(key)) || {}; } catch {}
+    if (tries.at && Date.now() - tries.at < 30000) return;
+    try { sessionStorage.setItem(key, JSON.stringify({ at: Date.now() })); } catch {}
     if ("caches" in window) await Promise.all((await caches.keys()).map(k => caches.delete(k)));
     const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
     if (reg) await reg.update().catch(() => {});
@@ -998,6 +1001,7 @@ async function checkForUpdate() {
   } catch { /* hors connexion : on garde la version locale */ }
 }
 window.addEventListener("load", checkForUpdate);
+setInterval(() => { if (!document.hidden) checkForUpdate(); }, 60000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) checkForUpdate(); });
 
 if ("serviceWorker" in navigator) {
