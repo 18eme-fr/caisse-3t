@@ -1,7 +1,7 @@
 // Garde l'appli disponible sans réseau.
 // La page est toujours demandée au réseau d'abord (version la plus récente),
 // la copie locale ne sert que lorsqu'il n'y a pas de connexion.
-const CACHE = "caisse-3t-v18";
+const CACHE = "caisse-3t-v19";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png", "logo.png"];
 
 self.addEventListener("install", e => {

@@ -18,15 +18,14 @@
 <style>
 /* Layout : grille de tuiles tactiles par rayon, barre d'addition fixée en bas, feuille d'encaissement qui monte du bas */
 :root {
-  /* Charte du logo 3T : rose framboise #EC005C. --wine sert aux aplats (boutons, pastilles),
-     --wine-text à une nuance plus foncée pour les textes, lisible sur fond clair. */
+  /* Charte du logo 3T : rose framboise #EC005C, utilisé tel quel pour les aplats et les textes. */
   --bg: #fbf5f7;
   --surface: #ffffff;
   --ink: #2a0f1c;
   --muted: #7e6170;
   --line: #f0dce5;
-  --wine: #e3005a;
-  --wine-text: #c4004f;
+  --wine: #ec005c;
+  --wine-text: #ec005c;
   --wine-ink: #ffffff;
   --wine-soft: #fde4ee;
   --ok: #1f7a4a;
@@ -106,7 +105,8 @@ section.rayon h2 {
 .tile.has { border-color: var(--wine-text); background: var(--wine-soft); }
 .tile .name { font-weight: 700; font-size: 1rem; line-height: 1.2; padding-right: 34px; overflow-wrap: anywhere; }
 .tile .desc { font-size: .74rem; color: var(--muted); line-height: 1.25; }
-.tile .price { font-family: var(--display); font-weight: 600; font-size: 1.05rem; color: var(--wine-text); }
+.tile.has .desc { padding-right: 46px; }
+.tile .price { font-family: var(--display); font-weight: 700; font-size: 1.2rem; color: var(--wine-text); }
 .tile .qty {
   position: absolute; top: 10px; right: 10px; min-width: 30px; height: 30px; border-radius: 999px;
   background: var(--wine); color: var(--wine-ink); font-weight: 700; display: grid; place-items: center;
@@ -979,7 +979,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   render();
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 20;
+const APP_VERSION = 21;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
