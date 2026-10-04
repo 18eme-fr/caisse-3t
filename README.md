@@ -29,7 +29,7 @@ Affiche à imprimer avec le QR code : [`QR-caisse-3T.png`](QR-caisse-3T.png)
 - `manifest.webmanifest`, `icon-*.png` : nom et icône pour l'écran d'accueil
 - `sw.js` : fonctionnement hors connexion
 - `version.json` : numéro de la version publiée
-- `fonts/` : police Barlow Condensed, licence SIL Open Font License 1.1 (voir `BarlowCondensed-LICENSE.txt`)
+- `fonts/` : police Figtree, licence SIL Open Font License 1.1 (voir `Figtree-LICENSE.txt`)
 
 ## Publier une modification
 
