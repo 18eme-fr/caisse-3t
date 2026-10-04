@@ -332,7 +332,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
 
 <div class="bar">
   <div class="notes-row">
-    <button type="button" class="note-chip all" id="btn-notes-all" hidden>Notes <b id="notes-n"></b></button>
+    <button type="button" class="note-chip all" id="btn-notes-all" hidden>Notes</button>
     <button type="button" class="note-chip add" id="btn-note-add" aria-label="Ouvrir une nouvelle note">+ Note</button>
     <div class="notes" id="notes" aria-label="Notes ouvertes"></div>
   </div>
@@ -657,7 +657,6 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
     renderNotes();
     const c = count(), i = notes.findIndex(n => n.id === activeId);
     $("#btn-notes-all").hidden = notes.length < 2;
-    $("#notes-n").textContent = notes.length;
     $("#bar-count").textContent = (notes.length > 1 ? `‹ ${i + 1}/${notes.length} › · ` : "") + (c ? `${c} article${c > 1 ? "s" : ""}` : "Note vide");
     $("#bar-total").textContent = eur(total());
     $("#btn-pay").disabled = !c;
@@ -1178,7 +1177,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   if (!owner) openOwner(true);
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 42;
+const APP_VERSION = 43;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
