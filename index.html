@@ -645,8 +645,8 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   function renderNotes() {
     patch($("#notes"), notes.map(n => {
       const on = n.id === activeId, t = noteTotal(n);
-      return `<button type="button" class="note-chip${on ? " on" : ""}" data-note="${n.id}" aria-pressed="${on}"${on ? ' aria-label="' + esc(n.name) + ', renommer ou supprimer"' : ""}>
-        <span>${esc(n.name)}</span>${t ? `<small>${eur(t)}</small>` : ""}${on ? '<i aria-hidden="true">✎</i>' : ""}</button>`;
+      return `<button type="button" class="note-chip${on ? " on" : ""}" data-note="${n.id}" aria-pressed="${on}">
+        <span>${esc(n.name)}</span>${t ? `<small>${eur(t)}</small>` : ""}</button>`;
     }).join(""));
     const on = $("#notes .on"); if (on) on.scrollIntoView({ block: "nearest", inline: "nearest" });
   }
@@ -740,34 +740,9 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   });
   $("#notes").addEventListener("click", e => {
     const chip = e.target.closest("[data-note]"); if (!chip) return;
-    if (chip.dataset.note === activeId) return openNoteEdit();
+    if (chip.dataset.note === activeId) return;
     switchNote(chip.dataset.note); buzz();
   });
-  function openNoteEdit() {
-    const n = active();
-    openSheet(`
-      <h3>${esc(n.name)}</h3>
-      <form class="form" id="nform">
-        <label>Nom de la note<input id="f-note" value="${esc(n.name)}" maxlength="24" autocomplete="off" placeholder="ex. Table 4, Julie…"></label>
-      </form>
-      <div class="quick">${["Table 1", "Table 2", "Table 3", "Table 4", "Comptoir", "Loge"].map(x => `<button type="button" data-quickname="${x}">${x}</button>`).join("")}</div>
-      <div class="actions">
-        <button class="btn danger" type="button" data-note-del>Supprimer la note</button>
-        <button class="btn" type="button" data-note-save>Enregistrer</button>
-      </div>`);
-    $("#nform").onsubmit = e => { e.preventDefault(); saveNoteName(); };
-  }
-  function saveNoteName(v) {
-    const name = (v || $("#f-note").value).trim();
-    if (!name) { toast("Indiquez un nom"); return; }
-    active().name = name; save(); closeSheet(); render();
-  }
-  function delNote(b) {
-    if (!isEmpty(active()) && !b.dataset.armed) { b.dataset.armed = "1"; b.textContent = "Confirmer : la commande sera perdue"; return; }
-    const name = active().name;
-    const others = closeNote(); save(); closeSheet(); render(); toast(name + " supprimée");
-    if (others) openNotesList("Choisir la note suivante");
-  }
 
 
   $("#btn-edit").addEventListener("click", e => {
@@ -915,15 +890,12 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
       return;
     }
     if (t.hasAttribute("data-save")) return saveEdit();
-    if (t.hasAttribute("data-note-save")) return saveNoteName();
     if (t.dataset.calmove) return moveMonth(+t.dataset.calmove);
     if (t.dataset.calday) return openCalDay(t.dataset.calday);
     if (t.hasAttribute("data-calback")) return openCalendar();
     if (t.hasAttribute("data-opencal")) { calMonth = null; return openCalendar(); }
     if (t.dataset.goto) { closeSheet(); if (t.dataset.goto !== activeId) switchNote(t.dataset.goto); return; }
     if (t.hasAttribute("data-newnote")) { closeSheet(); return newNote(); }
-    if (t.dataset.quickname) return saveNoteName(t.dataset.quickname);
-    if (t.hasAttribute("data-note-del")) return delNote(t);
     if (t.hasAttribute("data-del")) return delEdit(t);
     if (t.hasAttribute("data-reset-day")) return resetDay(t);
     if (t.hasAttribute("data-reset-menu")) return resetMenu(t);
@@ -1161,7 +1133,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   if (!owner) openOwner(true);
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 45;
+const APP_VERSION = 46;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
