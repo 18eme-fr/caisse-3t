@@ -64,8 +64,9 @@ header.top {
 }
 .sheet.center {
   top: 50%; bottom: auto; left: 16px; right: 16px; max-width: 400px; margin: 0 auto;
-  transform: translateY(-50%); border-radius: 20px; padding: 24px 20px; animation: none;
+  transform: translateY(-50%); border-radius: 20px; padding: 24px 20px; animation: pop-in .26s cubic-bezier(.22, 1, .36, 1);
 }
+.sheet.center.closing { animation: pop-out .18s ease-in forwards; }
 .owner-form { align-items: center; text-align: center; }
 .form.owner-form label { font-family: var(--display); font-weight: 700; font-size: 1.3rem; color: var(--wine-text); }
 .form.owner-form input { width: 100%; text-align: center; font-size: 1.2rem; }
@@ -106,7 +107,7 @@ section.rayon h2 {
   position: relative; text-align: left; border: 1.5px solid var(--line); background: var(--surface);
   border-radius: 14px; padding: 14px 12px 12px; min-height: 96px; box-shadow: var(--shadow);
   display: flex; flex-direction: column; justify-content: space-between; gap: 8px;
-  user-select: none; touch-action: manipulation; transition: transform .08s ease, border-color .15s;
+  user-select: none; touch-action: manipulation; transition: transform .12s ease, border-color .18s ease, background-color .18s ease;
 }
 .tile:active { transform: scale(.97); }
 .tile.has { border-color: var(--wine-text); background: var(--wine-soft); }
@@ -171,6 +172,7 @@ section.rayon h2 {
 .note-card .nc-head span { font-family: var(--display); font-weight: 600; color: var(--wine-text); }
 .note-card small { color: var(--muted); font-size: .92rem; overflow-wrap: anywhere; }
 .note-card em { font-style: normal; font-size: .72rem; font-weight: 700; color: var(--wine-text); text-transform: uppercase; letter-spacing: .08em; }
+.note-chip { transition: background-color .18s ease, color .18s ease, border-color .18s ease; }
 .note-chip.add { border-style: dashed; color: var(--muted); font-weight: 500; }
 .cal-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .cal-nav { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); font-size: 1.4rem; }
@@ -203,16 +205,26 @@ section.rayon h2 {
 .btn.ok { background: var(--ok); color: var(--wine-ink); }
 
 /* Feuille d'addition */
-.scrim { position: fixed; inset: 0; background: rgba(20, 8, 12, .45); z-index: 20; }
+.scrim { position: fixed; inset: 0; background: rgba(20, 8, 12, .45); z-index: 20; animation: fade-in .25s ease-out; }
+.scrim.closing { animation: fade-out .22s ease-in forwards; }
 .sheet {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; max-height: 92%;
   background: var(--bg); border-radius: 20px 20px 0 0; overflow-y: auto;
   padding: 8px 16px calc(16px + env(safe-area-inset-bottom, 0px));
-  animation: up .2s ease-out;
+  animation: sheet-in .32s cubic-bezier(.22, 1, .36, 1);
 }
+.sheet.closing { animation: sheet-out .22s cubic-bezier(.4, 0, 1, 1) forwards; }
 .sheet-in { max-width: 620px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
-@keyframes up { from { transform: translateY(30px); } to { transform: none; } }
-@media (prefers-reduced-motion: reduce) { .sheet { animation: none; } .tile { transition: none; } }
+@keyframes sheet-in { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes sheet-out { from { transform: none; } to { transform: translateY(100%); } }
+@keyframes pop-in { from { opacity: 0; transform: translateY(-50%) scale(.94); } to { opacity: 1; transform: translateY(-50%); } }
+@keyframes pop-out { from { opacity: 1; transform: translateY(-50%); } to { opacity: 0; transform: translateY(-50%) scale(.96); } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .sheet, .sheet.center, .sheet.closing, .scrim, .scrim.closing { animation: none; }
+  .tile, .toast, .note-chip { transition: none; }
+}
 .grab { width: 42px; height: 5px; border-radius: 3px; background: var(--line); margin: 4px auto 0; }
 .sheet h3 { font-family: var(--display); font-weight: 700; font-size: 1.6rem; margin: 0;  }
 .ticket { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 6px 14px; }
@@ -275,10 +287,12 @@ section.rayon h2 {
 .stepper button { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--wine); background: var(--surface); color: var(--wine-text); font-size: 1.2rem; font-weight: 700; }
 .note { color: var(--muted); font-size: .8rem; line-height: 1.4; margin: 0; }
 
+.toast.show { opacity: 1; translate: 0 0; }
 .toast {
   position: fixed; left: 50%; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
   background: #fff; color: var(--wine); border: 1.5px solid var(--wine); box-shadow: var(--shadow); padding: 10px 16px; font-weight: 700; border-radius: 999px; font-weight: 500; z-index: 30;
   font-size: .9rem; white-space: nowrap;
+  opacity: 0; translate: 0 10px; transition: opacity .2s ease, translate .25s cubic-bezier(.22, 1, .36, 1); pointer-events: none;
 }
 html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
 </style>
@@ -525,7 +539,30 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
 
   function toast(msg) {
     const t = $("#toast"); t.textContent = msg; t.hidden = false;
-    clearTimeout(toast.h); toast.h = setTimeout(() => t.hidden = true, 1800);
+    requestAnimationFrame(() => t.classList.add("show"));
+    clearTimeout(toast.h); clearTimeout(toast.h2);
+    toast.h = setTimeout(() => { t.classList.remove("show"); toast.h2 = setTimeout(() => t.hidden = true, 250); }, 1800);
+  }
+
+  // Met à jour l'affichage en ne touchant qu'à ce qui a changé, au lieu de tout redessiner :
+  // pas de clignotement ni de saccade quand on ajoute un produit ou qu'on change de note
+  function morph(a, b) {
+    if (a.nodeType !== b.nodeType || a.nodeName !== b.nodeName) { a.replaceWith(b); return; }
+    if (a.nodeType === 3 || a.nodeType === 8) { if (a.nodeValue !== b.nodeValue) a.nodeValue = b.nodeValue; return; }
+    if (a.nodeType !== 1) return;
+    for (const { name } of [...a.attributes]) if (!b.hasAttribute(name)) a.removeAttribute(name);
+    for (const { name, value } of [...b.attributes]) if (a.getAttribute(name) !== value) a.setAttribute(name, value);
+    if (a.tagName === "INPUT" && a.value !== (b.getAttribute("value") || "")) a.value = b.getAttribute("value") || "";
+    morphChildren(a, b);
+  }
+  function morphChildren(a, b) {
+    const ac = [...a.childNodes], bc = [...b.childNodes];
+    bc.forEach((n, i) => ac[i] ? morph(ac[i], n) : a.appendChild(n));
+    for (let i = bc.length; i < ac.length; i++) ac[i].remove();
+  }
+  function patch(el, html) {
+    const t = document.createElement("template"); t.innerHTML = html;
+    morphChildren(el, t.content);
   }
 
   function renderDay() {
@@ -542,7 +579,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
     main.classList.toggle("editing", editing);
     const all = [...RAYONS, ...menu.map(m => m.cat).filter(c => !RAYONS.includes(c))];
     const cats = [...new Set(all)].filter(c => editing || menu.some(m => m.cat === c));
-    main.innerHTML = cats.map(cat => {
+    patch(main, cats.map(cat => {
       const items = menu.filter(m => m.cat === cat);
       const tiles = items.map(m => {
         const q = qtyOf(m.id);
@@ -557,15 +594,15 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
       }).join("");
       const add = editing ? `<button type="button" class="tile add" data-add="${cat}">+ Ajouter un produit</button>` : "";
       return `<section class="rayon" id="r-${slug(cat)}"><h2>${cat}</h2><div class="grid">${tiles}${add}</div></section>`;
-    }).join("");
+    }).join(""));
   }
 
   function renderNotes() {
-    $("#notes").innerHTML = notes.map(n => {
+    patch($("#notes"), notes.map(n => {
       const on = n.id === activeId, t = noteTotal(n);
       return `<button type="button" class="note-chip${on ? " on" : ""}" data-note="${n.id}" aria-pressed="${on}"${on ? ' aria-label="' + esc(n.name) + ', renommer ou supprimer"' : ""}>
         <span>${esc(n.name)}</span>${t ? `<small>${eur(t)}</small>` : ""}${on ? '<i aria-hidden="true">✎</i>' : ""}</button>`;
-    }).join("");
+    }).join(""));
     const on = $("#notes .on"); if (on) on.scrollIntoView({ block: "nearest", inline: "nearest" });
   }
   function renderBar() {
@@ -678,7 +715,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
         <button class="btn danger" type="button" data-note-del>Supprimer la note</button>
         <button class="btn" type="button" data-note-save>Enregistrer</button>
       </div>`);
-    $("#nform").addEventListener("submit", e => { e.preventDefault(); saveNoteName(); });
+    $("#nform").onsubmit = e => { e.preventDefault(); saveNoteName(); };
   }
   function saveNoteName(v) {
     const name = (v || $("#f-note").value).trim();
@@ -711,13 +748,26 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
 
   // Feuille
   let sheetLocked = false; // fenêtre qu'on ne peut pas fermer sans la remplir
+  let closeTimer = null;
   function openSheet(html, opts = {}) {
-    $("#sheet-in").innerHTML = (opts.center ? "" : `<div class="grab"></div>`) + html;
-    $("#sheet").classList.toggle("center", !!opts.center);
+    const sh = $("#sheet"), sc = $("#scrim");
+    const content = (opts.center ? "" : `<div class="grab"></div>`) + html;
+    const wasOpen = !sh.hidden && !sh.classList.contains("closing") && sh.classList.contains("center") === !!opts.center;
+    clearTimeout(closeTimer);
     sheetLocked = !!opts.locked;
-    $("#sheet").hidden = false; $("#scrim").hidden = false;
+    if (wasOpen) { patch($("#sheet-in"), content); return; }
+    $("#sheet-in").innerHTML = content;
+    sh.classList.toggle("center", !!opts.center);
+    for (const el of [sh, sc]) { el.classList.remove("closing"); el.style.animation = "none"; el.hidden = false; void el.offsetWidth; el.style.animation = ""; }
+    sh.scrollTop = 0;
   }
-  function closeSheet() { if (sheetLocked) return; $("#sheet").hidden = true; $("#scrim").hidden = true; }
+  function closeSheet() {
+    const sh = $("#sheet"), sc = $("#scrim");
+    if (sheetLocked || sh.hidden || sh.classList.contains("closing")) return;
+    sh.classList.add("closing"); sc.classList.add("closing");
+    const ms = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 220;
+    closeTimer = setTimeout(() => { sh.hidden = true; sc.hidden = true; sh.classList.remove("closing"); sc.classList.remove("closing"); }, ms);
+  }
   $("#scrim").addEventListener("click", closeSheet);
 
   // Addition
@@ -752,7 +802,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
         <button class="btn ok" type="button" data-done id="btn-done">Encaisser ${eur(t)}</button>
       </div>`);
     const inp = $("#given");
-    if (inp) inp.addEventListener("input", () => { given = parseFloat(inp.value.replace(",", ".")) || 0; updateChange(); });
+    if (inp) inp.oninput = () => { given = parseFloat(inp.value.replace(",", ".")) || 0; updateChange(); };
     updateChange();
   }
   // Monnaie à rendre, mise à jour à chaque chiffre tapé
@@ -822,7 +872,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
         <button class="btn" type="button" data-save>Enregistrer</button>
       </div>
       <button class="btn ghost" type="button" data-reset-menu>Remettre la carte d'origine</button>`);
-    $("#pform").addEventListener("submit", e => { e.preventDefault(); saveEdit(); });
+    $("#pform").onsubmit = e => { e.preventDefault(); saveEdit(); };
   }
   function saveEdit() {
     const name = $("#f-name").value.trim();
@@ -1016,7 +1066,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
         ${first ? "" : `<button class="btn ghost" type="button" data-close>Annuler</button>`}
         <button class="btn${first ? " wide" : ""}" type="button" data-owner-save>${first ? "Commencer" : "Enregistrer"}</button>
       </div>`, { center: true, locked: first });
-    $("#oform").addEventListener("submit", e => { e.preventDefault(); saveOwner(); });
+    $("#oform").onsubmit = e => { e.preventDefault(); saveOwner(); };
   }
   function saveOwner() {
     const v = $("#f-owner").value.trim();
@@ -1034,7 +1084,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   if (!owner) openOwner(true);
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 27;
+const APP_VERSION = 28;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
