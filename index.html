@@ -556,9 +556,27 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   const label = l => l.item.name + (l.item.cat === "Bières" && l.item.desc ? " · " + l.item.desc : "") + (l.opt ? " · " + l.opt : "");
   const qtyOf = id => lines().filter(l => l.item.id === id).reduce((s, l) => s + l.q, 0);
   function bump(key, d) {
+    if (d < 0 && !order[key]) return;
     order[key] = Math.max(0, (order[key] || 0) + d);
     if (!order[key]) delete order[key];
+    // historique des ajouts de la note, pour que « − » retire le dernier ajouté
+    const n = active(); if (n) {
+      const h = n.hist || (n.hist = []);
+      if (d > 0) { h.push(key); if (h.length > 300) h.shift(); }
+      else { const i = h.lastIndexOf(key); if (i >= 0) h.splice(i, 1); }
+    }
     buzz(); save(); render();
+  }
+  // « − » sur un produit à choix : retire directement le dernier ajouté (ex. Sirop à l'eau · Menthe)
+  function removeLastOf(id) {
+    const h = active().hist || [];
+    let key = null;
+    for (let i = h.length - 1; i >= 0 && !key; i--) if (h[i].split("::")[0] === id && order[h[i]] > 0) key = h[i];
+    if (!key) key = Object.keys(order).filter(k => k.split("::")[0] === id && order[k] > 0).pop();
+    if (!key) return;
+    const [, opt] = key.split("::");
+    bump(key, -1);
+    toast("Retiré : " + byId(id).name + (opt ? " · " + opt : ""));
   }
   const total = () => lines().reduce((s, l) => s + l.q * l.price, 0);
   const count = () => lines().reduce((s, l) => s + l.q, 0);
@@ -650,7 +668,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
     const minus = e.target.closest("[data-minus]");
     if (minus) {
       const id = minus.dataset.minus;
-      if (byId(id).opts) openPick(id); else bump(id, -1);
+      if (byId(id).opts) removeLastOf(id); else bump(id, -1);
       return;
     }
     const add = e.target.closest("[data-add]");
@@ -1153,7 +1171,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   if (!owner) openOwner(true);
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 38;
+const APP_VERSION = 39;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
