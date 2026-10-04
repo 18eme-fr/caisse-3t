@@ -210,6 +210,7 @@ section.rayon h2 {
   animation: sheet-in .32s cubic-bezier(.22, 1, .36, 1);
   will-change: transform; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
 }
+.sheet.dragging { overflow: hidden; }
 .sheet.closing { animation: sheet-out .22s cubic-bezier(.4, 0, 1, 1) forwards; }
 .sheet-in { max-width: 620px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
 @keyframes sheet-in { from { transform: translate3d(0, 100%, 0); } to { transform: translate3d(0, 0, 0); } }
@@ -226,11 +227,11 @@ section.rayon h2 {
 .grab {
   position: sticky; top: -8px; z-index: 2; display: flex; justify-content: center; align-items: center;
   width: calc(100% + 32px); height: 34px; margin: -8px -16px -10px; padding: 0; border: 0;
-  background: var(--bg); border-radius: 20px 20px 0 0; touch-action: none; cursor: grab;
+  background: var(--bg); border-radius: 20px 20px 0 0; touch-action: none; cursor: grab; -webkit-user-select: none; user-select: none;
 }
 .grab::before { content: ""; width: 46px; height: 6px; border-radius: 3px; background: var(--line); transition: background-color .15s; }
 .grab:active::before, .sheet.dragging .grab::before { background: var(--wine); }
-.sheet h3 { font-family: var(--display); font-weight: 800; font-size: 1.4rem; letter-spacing: -.02em; margin: 0;  }
+.sheet h3 { touch-action: none; font-family: var(--display); font-weight: 800; font-size: 1.4rem; letter-spacing: -.02em; margin: 0;  }
 .ticket { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 6px 14px; }
 .ticket .row { display: grid; grid-template-columns: 2.2em 1fr auto; gap: 8px; padding-block: 9px; border-bottom: 1px dashed var(--line); align-items: baseline; }
 .ticket .row:last-child { border-bottom: 0; }
@@ -804,10 +805,15 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
       if (y0 === null) return;
       const y = e.touches[0].clientY, d = y - y0;
       if (!dragging) {
-        if (d < -4) { y0 = null; return; }          // geste vers le haut : on laisse défiler
-        if (d < 6) return;
+        if (d < 0) { y0 = null; return; }           // geste vers le haut : défilement normal du contenu
+        // Geste vers le bas, fenêtre en haut : on bloque tout de suite le rebond d'iOS,
+        // sinon il démarre avant nous et les deux mouvements se contrarient (saccades)
+        if (!e.cancelable) { y0 = null; return; }
+        e.preventDefault();
+        if (d < 3) return;
         dragging = true; sh.classList.add("dragging"); sh.style.animation = "none"; sh.style.transition = "none";
         y0 = y; lastY = y; lastT = performance.now(); // part de la position actuelle : pas de saut
+        return;
       }
       e.preventDefault();
       const now = performance.now();
@@ -1147,7 +1153,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   if (!owner) openOwner(true);
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 30;
+const APP_VERSION = 31;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
