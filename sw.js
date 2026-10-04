@@ -1,7 +1,7 @@
 // Garde l'appli disponible sans réseau.
 // La page est toujours demandée au réseau d'abord (version la plus récente),
 // la copie locale ne sert que lorsqu'il n'y a pas de connexion.
-const CACHE = "caisse-3t-v5";
+const CACHE = "caisse-3t-v7";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png", "logo.png"];
 
 self.addEventListener("install", e => {
@@ -11,10 +11,12 @@ self.addEventListener("install", e => {
     .then(() => self.skipWaiting()));
 });
 
+// Supprime les copies des anciennes versions. Appelé à l'activation et à chaque ouverture,
+// car une ancienne version encore en train de terminer peut recréer sa copie juste après.
+const cleanup = () => caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))));
+
 self.addEventListener("activate", e => {
-  e.waitUntil(caches.keys()
-    .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
-    .then(() => self.clients.claim()));
+  e.waitUntil(cleanup().then(() => self.clients.claim()));
 });
 
 self.addEventListener("fetch", e => {
@@ -23,14 +25,17 @@ self.addEventListener("fetch", e => {
   const url = new URL(req.url);
   const isPage = req.mode === "navigate" || (url.origin === location.origin && /\/(index\.html)?$/.test(url.pathname));
 
+  if (url.pathname.endsWith("/version.json")) return; // toujours le réseau
+
   if (isPage) {
+    e.waitUntil(cleanup());
     e.respondWith(
       fetch(req, { cache: "no-store" })
         .then(res => {
           if (res.ok) caches.open(CACHE).then(c => c.put("index.html", res.clone()));
           return res;
         })
-        .catch(() => caches.match("index.html"))
+        .catch(() => caches.open(CACHE).then(c => c.match("index.html")))
     );
     return;
   }
