@@ -13,8 +13,14 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="preload" href="fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/Fredoka-Variable.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-/* Geist (Vercel, licence SIL OFL 1.1), intégrée à l'appli : elle fonctionne aussi sans réseau */
+/* Polices intégrées à l'appli (fonctionnent sans réseau), licence SIL OFL 1.1 :
+   Fredoka, ronde comme le logo, pour les titres, prix et boutons ; Geist pour les petits textes */
+@font-face {
+  font-family: "Fredoka"; src: url("fonts/Fredoka-Variable.woff2") format("woff2");
+  font-weight: 300 700; font-style: normal; font-display: swap;
+}
 @font-face {
   font-family: "Geist"; src: url("fonts/Geist-Variable.woff2") format("woff2");
   font-weight: 100 900; font-style: normal; font-display: swap;
@@ -35,7 +41,7 @@
   --ok: #ec005c;
   --warn: #b4441c;
   --shadow: 0 1px 2px rgba(120, 0, 50, .07), 0 4px 14px rgba(120, 0, 50, .06);
-  --display: "Geist", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --display: "Fredoka", "Geist", -apple-system, "Segoe UI", system-ui, sans-serif;
   --body: "Geist", -apple-system, "Segoe UI", system-ui, sans-serif;
 }
 [hidden] { display: none !important; }
@@ -66,7 +72,7 @@ header.top {
   transform: translateY(-50%); border-radius: 20px; padding: 24px 20px; animation: none;
 }
 .owner-form { align-items: center; text-align: center; }
-.form.owner-form label { font-family: var(--display); font-weight: 800; font-size: 1.3rem; color: var(--wine-text); }
+.form.owner-form label { font-family: var(--display); font-weight: 700; font-size: 1.3rem; color: var(--wine-text); }
 .form.owner-form input { width: 100%; text-align: center; font-size: 1.2rem; }
 .owner-logo { height: 80px; width: auto; }
 .btn.wide { width: 100%; }
@@ -74,7 +80,7 @@ header.top {
 .logo-btn { border: 0; padding: 0; background: none; border-radius: 10px; flex: none; }
 .brand .logo { height: 52px; width: auto; background: #fff; border-radius: 10px; padding: 3px 5px; flex: none; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.brand h1 { font-family: var(--display); font-weight: 800; font-size: 1.55rem; margin: 0; letter-spacing: -.01em; line-height: 1.05; }
+.brand h1 { font-family: var(--display); font-weight: 700; font-size: 1.55rem; margin: 0; letter-spacing: -.01em; line-height: 1.05; }
 .brand h1 span { color: var(--wine-text); }
 .brand small { color: var(--muted); font-size: .8rem; }
 .top-actions { display: flex; gap: 8px; }
@@ -92,8 +98,8 @@ header.top {
 
 section.rayon { padding-block: 10px; }
 section.rayon h2 {
-  font-family: var(--display); font-weight: 600; font-size: .78rem; text-transform: uppercase;
-  letter-spacing: .12em; color: var(--wine-text); margin: 0 0 10px;
+  font-family: var(--display); font-weight: 600; font-size: .85rem; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--wine-text); margin: 0 0 10px;
   position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--head-h, 72px)); z-index: 4;
   background: var(--bg); padding-block: 8px; margin-inline: -16px; padding-inline: 16px;
 }
@@ -109,10 +115,10 @@ section.rayon h2 {
 }
 .tile:active { transform: scale(.97); }
 .tile.has { border-color: var(--wine-text); background: var(--wine-soft); }
-.tile .name { font-weight: 600; font-size: 1.02rem; line-height: 1.2; letter-spacing: -.01em; padding-right: 34px; overflow-wrap: anywhere; }
+.tile .name { font-family: var(--display); font-weight: 500; font-size: 1.08rem; line-height: 1.2; padding-right: 34px; overflow-wrap: anywhere; }
 .tile .desc { font-size: .74rem; color: var(--muted); line-height: 1.25; }
 .tile.has .desc { padding-right: 46px; }
-.tile .price { font-family: var(--display); font-weight: 600; font-size: 1.2rem; color: var(--wine-text); letter-spacing: -.01em; }
+.tile .price { font-family: var(--display); font-weight: 600; font-size: 1.25rem; color: var(--wine-text); }
 .tile .qty {
   position: absolute; top: 10px; right: 10px; min-width: 30px; height: 30px; border-radius: 999px;
   background: var(--wine); color: var(--wine-ink); font-weight: 700; display: grid; place-items: center;
@@ -151,7 +157,7 @@ section.rayon h2 {
 .notes::-webkit-scrollbar { display: none; }
 .note-chip {
   flex: none; display: flex; align-items: baseline; gap: 6px; border: 1.5px solid var(--line); background: var(--bg);
-  border-radius: 999px; padding: 8px 14px; font-weight: 700; font-size: .9rem; min-height: 40px; white-space: nowrap;
+  border-radius: 999px; padding: 8px 14px; font-family: var(--display); font-weight: 600; font-size: .95rem; min-height: 40px; white-space: nowrap;
 }
 .note-chip small { font-weight: 500; color: var(--muted); font-size: .78rem; }
 .note-chip i { font-style: normal; font-weight: 400; opacity: .8; }
@@ -192,9 +198,9 @@ section.rayon h2 {
 .bar-in { max-width: 868px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
 .bar .sum { flex: 1; min-width: 0; }
 .bar .sum small { display: block; color: var(--muted); font-size: .8rem; }
-.bar .sum strong { font-family: var(--display); font-weight: 700; font-size: 1.9rem; line-height: 1; letter-spacing: -.03em; }
+.bar .sum strong { font-family: var(--display); font-weight: 700; font-size: 1.9rem; line-height: 1;  }
 .btn {
-  border: 0; border-radius: 12px; padding: 14px 18px; font-weight: 700; font-size: 1rem;
+  border: 0; border-radius: 12px; padding: 14px 18px; font-family: var(--display); font-weight: 600; font-size: 1.05rem;
   background: var(--wine); color: var(--wine-ink); min-height: 52px;
 }
 .btn:disabled { opacity: .4; cursor: default; }
@@ -213,7 +219,7 @@ section.rayon h2 {
 @keyframes up { from { transform: translateY(30px); } to { transform: none; } }
 @media (prefers-reduced-motion: reduce) { .sheet { animation: none; } .tile { transition: none; } }
 .grab { width: 42px; height: 5px; border-radius: 3px; background: var(--line); margin: 4px auto 0; }
-.sheet h3 { font-family: var(--display); font-weight: 700; font-size: 1.35rem; margin: 0; letter-spacing: -.02em; }
+.sheet h3 { font-family: var(--display); font-weight: 700; font-size: 1.35rem; margin: 0;  }
 .ticket { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 6px 14px; }
 .ticket .row { display: grid; grid-template-columns: 2.2em 1fr auto; gap: 8px; padding-block: 9px; border-bottom: 1px dashed var(--line); align-items: baseline; }
 .ticket .row:last-child { border-bottom: 0; }
@@ -222,7 +228,7 @@ section.rayon h2 {
 .ticket .row .l small { color: var(--muted); display: block; font-size: .75rem; }
 .ticket .total { display: flex; justify-content: space-between; align-items: baseline; padding-block: 12px 8px; border-top: 2px solid var(--ink); margin-top: 4px; }
 .ticket .total span { font-weight: 700; text-transform: uppercase; letter-spacing: .08em; font-size: .8rem; }
-.ticket .total strong { font-family: var(--display); font-size: 2rem; font-weight: 700; letter-spacing: -.03em; }
+.ticket .total strong { font-family: var(--display); font-size: 2rem; font-weight: 700;  }
 
 .label { font-size: .78rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 700; }
 .seg { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
@@ -1033,7 +1039,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   if (!owner) openOwner(true);
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 25;
+const APP_VERSION = 26;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
