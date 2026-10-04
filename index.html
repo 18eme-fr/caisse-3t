@@ -285,7 +285,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
 <script>
 (() => {
   const RAYONS = ["Ardoises", "Vins", "Bières", "Cocktails", "Softs", "Divers"];
-  const MENU_VERSION = 10;
+  const MENU_VERSION = 11;
   const SIROPS = ["Menthe", "Pêche", "Citron", "Fraise", "Grenadine", "Cassis"];
   const DEFAULT_MENU = [
     { id: "a1", cat: "Ardoises", name: "Ardoise fromage", desc: "Simple", price: 14 },
@@ -310,8 +310,8 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
     { id: "k8", cat: "Bières", name: "Panaché", desc: "Pinte 50 cl", price: 9 },
     { id: "k9", cat: "Bières", name: "Monaco", desc: "Demi 25 cl", price: 5 },
     { id: "k10", cat: "Bières", name: "Monaco", desc: "Pinte 50 cl", price: 9 },
-    { id: "k11", cat: "Bières", name: "Cidre doux", desc: "", price: 5 },
-    { id: "k12", cat: "Bières", name: "Cidre brut", desc: "", price: 5 },
+    { id: "k11", cat: "Bières", name: "Cidre doux", desc: "", price: 4 },
+    { id: "k12", cat: "Bières", name: "Cidre brut", desc: "", price: 4 },
     { id: "c1", cat: "Cocktails", name: "Aperol Spritz", desc: "", price: 10 },
     { id: "c2", cat: "Cocktails", name: "Bellini Spritz", desc: "", price: 10 },
     { id: "s1", cat: "Softs", name: "Coca-Cola", desc: "", price: 4 },
@@ -334,7 +334,8 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
 
   let menu = store.get("3t-menu", null) || DEFAULT_MENU.map(x => ({ ...x }));
   // Mise à jour de la carte : ajoute les nouveaux produits sans écraser les prix déjà modifiés
-  if (store.get("3t-menu-v", 1) < MENU_VERSION) {
+  const storedMenuV = store.get("3t-menu-v", 1);
+  if (storedMenuV < MENU_VERSION) {
     menu = menu.filter(m => !RETIRED.includes(m.id));
     DEFAULT_MENU.forEach(d => {
       const cur = menu.find(m => m.id === d.id);
@@ -345,8 +346,14 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
       const ia = DEFAULT_MENU.findIndex(d => d.id === a.id), ib = DEFAULT_MENU.findIndex(d => d.id === b.id);
       return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
     });
-    // Nouveaux prix de la carte : appliqués seulement aux produits encore à l'ancien prix par défaut
-    const OLD_PRICES = { k2: 9, s1: 5, s2: 5, s3: 5, s11: 5, s5: 5, s12: 5, s10: 5, s7: 5, s14: 5, s15: 5 };
+    // Changements de prix de la carte de base. Chaque lot ne s'applique qu'une fois, aux téléphones
+    // dont la carte est plus ancienne que "avant", et seulement si le prix est encore l'ancien prix
+    // par défaut (un prix modifié à la main n'est jamais écrasé).
+    const PRICE_CHANGES = [
+      { avant: 9, was: { k2: 9, s1: 5, s2: 5, s3: 5, s11: 5, s5: 5, s12: 5, s10: 5, s7: 5, s14: 5, s15: 5 } },
+      { avant: 11, was: { k11: 5, k12: 5 } },
+    ];
+    const OLD_PRICES = Object.assign({}, ...PRICE_CHANGES.filter(c => storedMenuV < c.avant).map(c => c.was));
     Object.entries(OLD_PRICES).forEach(([id, was]) => {
       const cur = menu.find(m => m.id === id), d = DEFAULT_MENU.find(x => x.id === id);
       if (!cur || !d) return;
@@ -879,7 +886,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   render();
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 14;
+const APP_VERSION = 15;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale

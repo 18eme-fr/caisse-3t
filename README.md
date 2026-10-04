@@ -30,5 +30,5 @@ L'appli s'ouvre alors en plein écran et fonctionne sans réseau.
 ## Publier une modification
 
 1. Augmenter `APP_VERSION` dans `index.html` **et** le numéro dans `version.json` (les deux identiques) : les téléphones se rechargent seuls.
-2. Si la carte de base (`DEFAULT_MENU`) change, augmenter aussi `MENU_VERSION`. Les nouveaux produits sont ajoutés sur les téléphones sans écraser les prix modifiés à la main ; pour changer un prix existant, l'ajouter à `OLD_PRICES` avec l'ancien prix.
+2. Si la carte de base (`DEFAULT_MENU`) change, augmenter aussi `MENU_VERSION`. Les nouveaux produits sont ajoutés sur les téléphones sans écraser les prix modifiés à la main ; pour changer un prix existant, ajouter un lot à `PRICE_CHANGES` (`avant` = la nouvelle `MENU_VERSION`, `was` = les anciens prix).
 3. Changer `CACHE` dans `sw.js`.
