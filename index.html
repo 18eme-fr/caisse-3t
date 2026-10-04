@@ -355,7 +355,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
 <script>
 (() => {
   const RAYONS = ["Ardoises", "Vins", "Bières", "Cocktails", "Softs", "Divers"];
-  const MENU_VERSION = 12;
+  const MENU_VERSION = 13;
   const SIROPS = ["Menthe", "Pêche", "Citron", "Fraise", "Grenadine", "Cassis"];
   const DEFAULT_MENU = [
     { id: "a1", cat: "Ardoises", name: "Ardoise fromage", desc: "Simple", price: 14 },
@@ -391,7 +391,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
     { id: "s5", cat: "Softs", name: "Limonade", desc: "", price: 4 },
     { id: "s12", cat: "Softs", name: "Diabolo", desc: "Choisir le sirop", price: 4.5, opts: SIROPS },
     { id: "s10", cat: "Softs", name: "Sirop à l'eau", desc: "Choisir le sirop", price: 4.5, opts: SIROPS },
-    { id: "s7", cat: "Softs", name: "Perrier", desc: "Nature ou avec sirop", price: 4, opts: ["Nature", ...SIROPS], optPrices: Object.fromEntries(SIROPS.map(x => [x, 4.5])) },
+    { id: "s7", cat: "Softs", name: "Perrier", desc: "Tranche ou sirop", price: 4, opts: ["Tranche", ...SIROPS], optPrices: Object.fromEntries(SIROPS.map(x => [x, 4.5])) },
     { id: "s16", cat: "Softs", name: "Vittel", desc: "Eau plate", price: 4 },
     { id: "s14", cat: "Softs", name: "Corona 0,0", desc: "Sans alcool", price: 4 },
     { id: "s15", cat: "Softs", name: "Jus de fruits", desc: "Choisir le parfum", price: 4, opts: ["Abricot", "Ananas", "Orange", "Tomate"] },
@@ -450,6 +450,16 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   if (!notes) notes = [{ id: "n1", name: "Note 1", order: store.get("3t-order", {}) }];
   let activeId = store.get("3t-active", notes[0].id);
   if (!notes.some(n => n.id === activeId)) activeId = notes[0].id;
+  if (storedMenuV < 13) {
+    const perrier = menu.find(m => m.id === "s7");
+    if (perrier && perrier.opts) {
+      perrier.opts = perrier.opts.map(o => o === "Nature" ? "Tranche" : o);
+      if (perrier.desc === "Nature ou avec sirop") perrier.desc = "Tranche ou sirop";
+      store.set("3t-menu", menu);
+    }
+    notes.forEach(n => { if (n.order["s7::Nature"]) { n.order["s7::Tranche"] = (n.order["s7::Tranche"] || 0) + n.order["s7::Nature"]; delete n.order["s7::Nature"]; } });
+    store.set("3t-notes", notes);
+  }
   let order = notes.find(n => n.id === activeId).order;
   const active = () => notes.find(n => n.id === activeId);
   const isEmpty = n => !Object.values(n.order).some(q => q > 0);
@@ -533,7 +543,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   function priceRange(m) {
     const ps = (m.opts || []).map(o => priceOf(m, o));
     const lo = Math.min(m.price, ...ps), hi = Math.max(m.price, ...ps);
-    return lo === hi ? eur(lo) : `${eur(lo)} – ${eur(hi)}`;
+    return lo === hi ? eur(lo) : `${eur(lo)} / ${eur(hi)}`;
   }
   // Une ligne de commande par produit et par choix (clé "id" ou "id::choix")
   function lines() {
@@ -1144,7 +1154,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   if (!owner) openOwner(true);
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 36;
+const APP_VERSION = 37;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
