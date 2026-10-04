@@ -44,6 +44,7 @@
   --wine: #d1566f; --wine-ink: #1a0d11; --wine-soft: #3b1f27; --ok: #5cc48a; --warn: #f08a62;
   --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
 }
+[hidden] { display: none !important; }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { min-height: 100%; }
 body {
@@ -136,6 +137,19 @@ section.rayon h2 {
 .note-chip i { font-style: normal; font-weight: 400; opacity: .8; }
 .note-chip.on { background: var(--wine); border-color: var(--wine); color: var(--wine-ink); }
 .note-chip.on small { color: var(--wine-ink); opacity: .85; }
+.note-chip.all { background: var(--surface); }
+.note-chip.all b { background: var(--wine); color: var(--wine-ink); border-radius: 999px; padding: 0 7px; font-size: .78rem; }
+.bar .sum { cursor: pointer; }
+.note-list { display: flex; flex-direction: column; gap: 8px; }
+.note-card {
+  position: relative; text-align: left; display: flex; flex-direction: column; gap: 4px; padding: 14px;
+  border: 1.5px solid var(--line); background: var(--surface); border-radius: 14px; min-height: 64px;
+}
+.note-card.on { border-color: var(--wine); background: var(--wine-soft); }
+.note-card .nc-head { display: flex; justify-content: space-between; gap: 10px; font-size: 1.05rem; }
+.note-card .nc-head span { font-family: var(--display); font-weight: 600; color: var(--wine); }
+.note-card small { color: var(--muted); font-size: .8rem; overflow-wrap: anywhere; }
+.note-card em { font-style: normal; font-size: .72rem; font-weight: 700; color: var(--wine); text-transform: uppercase; letter-spacing: .08em; }
 .note-chip.add { border-style: dashed; color: var(--muted); font-weight: 500; }
 .quick { display: flex; flex-wrap: wrap; gap: 8px; }
 .quick button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 14px; font-weight: 500; min-height: 40px; }
@@ -250,6 +264,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
 
 <div class="bar">
   <div class="notes-row">
+    <button type="button" class="note-chip all" id="btn-notes-all" hidden>Notes <b id="notes-n"></b></button>
     <button type="button" class="note-chip add" id="btn-note-add" aria-label="Ouvrir une nouvelle note">+ Note</button>
     <div class="notes" id="notes" aria-label="Notes ouvertes"></div>
   </div>
@@ -505,8 +520,10 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   }
   function renderBar() {
     renderNotes();
-    const c = count();
-    $("#bar-count").textContent = (notes.length > 1 ? active().name + " · " : "") + (c ? `${c} article${c > 1 ? "s" : ""}` : "Note vide");
+    const c = count(), i = notes.findIndex(n => n.id === activeId);
+    $("#btn-notes-all").hidden = notes.length < 2;
+    $("#notes-n").textContent = notes.length;
+    $("#bar-count").textContent = (notes.length > 1 ? `‹ ${active().name} (${i + 1}/${notes.length}) › · ` : "") + (c ? `${c} article${c > 1 ? "s" : ""}` : "Note vide");
     $("#bar-total").textContent = eur(total());
     $("#btn-pay").disabled = !c;
     $("#btn-clear").disabled = !c;
@@ -551,6 +568,45 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
 
   // Barre des notes : toucher une note l'ouvre, toucher la note active permet de la renommer
   $("#btn-note-add").addEventListener("click", newNote);
+
+  // Toutes les notes ouvertes, avec leur contenu : toucher une note l'affiche
+  function openNotesList() {
+    openSheet(`
+      <h3>Notes ouvertes</h3>
+      <div class="note-list">${notes.map(n => {
+        const ls = Object.entries(n.order).filter(([, q]) => q > 0).map(([key, q]) => {
+          const [id, opt] = key.split("::"); const m = byId(id);
+          return m ? (q > 1 ? q + "× " : "") + m.name + (m.cat === "Bières" && m.desc ? " " + m.desc : "") + (opt ? " · " + opt : "") : "";
+        }).filter(Boolean);
+        return `<button type="button" class="note-card${n.id === activeId ? " on" : ""}" data-goto="${n.id}">
+          <span class="nc-head"><b>${esc(n.name)}</b><span>${eur(noteTotal(n))}</span></span>
+          <small>${ls.length ? esc(ls.join(", ")) : "Vide"}</small>
+          ${n.id === activeId ? '<em>Affichée</em>' : ""}
+        </button>`;
+      }).join("")}</div>
+      <div class="actions">
+        <button class="btn ghost" type="button" data-close>Fermer</button>
+        <button class="btn" type="button" data-newnote>+ Nouvelle note</button>
+      </div>`);
+  }
+  $("#btn-notes-all").addEventListener("click", openNotesList);
+  $(".bar .sum").addEventListener("click", () => { if (notes.length > 1) openNotesList(); });
+
+  // Balayer la barre du bas vers la gauche ou la droite : note suivante ou précédente
+  function stepNote(d) {
+    if (notes.length < 2) return;
+    const i = notes.findIndex(n => n.id === activeId);
+    const next = notes[(i + d + notes.length) % notes.length];
+    switchNote(next.id); buzz(); toast(next.name);
+  }
+  let sx = null, sy = 0;
+  const barIn = $(".bar-in");
+  barIn.addEventListener("touchstart", e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+  barIn.addEventListener("touchend", e => {
+    if (sx === null) return;
+    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; sx = null;
+    if (Math.abs(dx) > 50 && Math.abs(dy) < 40) stepNote(dx < 0 ? 1 : -1);
+  });
   $("#notes").addEventListener("click", e => {
     const chip = e.target.closest("[data-note]"); if (!chip) return;
     if (chip.dataset.note === activeId) return openNoteEdit();
@@ -674,6 +730,8 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
     }
     if (t.hasAttribute("data-save")) return saveEdit();
     if (t.hasAttribute("data-note-save")) return saveNoteName();
+    if (t.dataset.goto) { closeSheet(); if (t.dataset.goto !== activeId) switchNote(t.dataset.goto); return; }
+    if (t.hasAttribute("data-newnote")) { closeSheet(); return newNote(); }
     if (t.dataset.quickname) return saveNoteName(t.dataset.quickname);
     if (t.hasAttribute("data-note-del")) return delNote(t);
     if (t.hasAttribute("data-del")) return delEdit(t);
@@ -813,7 +871,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   render();
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 11;
+const APP_VERSION = 12;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
