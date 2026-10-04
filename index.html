@@ -244,7 +244,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
 <script>
 (() => {
   const RAYONS = ["Ardoises", "Vins", "Bières", "Softs", "Divers"];
-  const MENU_VERSION = 5;
+  const MENU_VERSION = 6;
   const SIROPS = ["Menthe", "Pêche", "Citron", "Fraise", "Grenadine", "Cassis"];
   const DEFAULT_MENU = [
     { id: "a1", cat: "Ardoises", name: "Ardoise fromage", desc: "Simple", price: 14 },
@@ -258,7 +258,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
     { id: "v4", cat: "Vins", name: "Verre de moelleux", desc: "", price: 5 },
     { id: "b7", cat: "Vins", name: "Bouteille de vin", desc: "Choisir la couleur", price: 25, opts: ["Rouge", "Rosé", "Blanc sec", "Moelleux"] },
     { id: "k1", cat: "Bières", name: "Blonde", desc: "Demi 25 cl", price: 5 },
-    { id: "k2", cat: "Bières", name: "Blonde", desc: "Pinte 50 cl", price: 9 },
+    { id: "k2", cat: "Bières", name: "Blonde", desc: "Pinte 50 cl", price: 8 },
     { id: "k3", cat: "Bières", name: "Blanche", desc: "Demi 25 cl", price: 5 },
     { id: "k4", cat: "Bières", name: "Blanche", desc: "Pinte 50 cl", price: 9 },
     { id: "k5", cat: "Bières", name: "IPA", desc: "Demi 25 cl", price: 5 },
@@ -267,16 +267,16 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
     { id: "k8", cat: "Bières", name: "Panaché", desc: "Pinte 50 cl", price: 9 },
     { id: "k9", cat: "Bières", name: "Monaco", desc: "Demi 25 cl", price: 5 },
     { id: "k10", cat: "Bières", name: "Monaco", desc: "Pinte 50 cl", price: 9 },
-    { id: "s1", cat: "Softs", name: "Coca-Cola", desc: "", price: 5 },
-    { id: "s2", cat: "Softs", name: "Coca-Cola Zéro", desc: "", price: 5 },
-    { id: "s3", cat: "Softs", name: "Orangina", desc: "", price: 5 },
-    { id: "s11", cat: "Softs", name: "Fuze Tea", desc: "", price: 5 },
-    { id: "s5", cat: "Softs", name: "Limonade", desc: "", price: 5 },
-    { id: "s12", cat: "Softs", name: "Diabolo", desc: "Choisir le sirop", price: 5, opts: SIROPS },
-    { id: "s10", cat: "Softs", name: "Sirop à l'eau", desc: "Choisir le sirop", price: 5, opts: SIROPS },
-    { id: "s7", cat: "Softs", name: "Perrier", desc: "Nature ou avec sirop", price: 5, opts: ["Nature", ...SIROPS], optPrices: Object.fromEntries(SIROPS.map(x => [x, 5.5])) },
-    { id: "s14", cat: "Softs", name: "Corona 0,0", desc: "Sans alcool", price: 5 },
-    { id: "s15", cat: "Softs", name: "Jus de fruits", desc: "Choisir le parfum", price: 5, opts: ["Abricot", "Ananas", "Orange", "Tomate"] },
+    { id: "s1", cat: "Softs", name: "Coca-Cola", desc: "", price: 4 },
+    { id: "s2", cat: "Softs", name: "Coca-Cola Zéro", desc: "", price: 4 },
+    { id: "s3", cat: "Softs", name: "Orangina", desc: "", price: 4 },
+    { id: "s11", cat: "Softs", name: "Fuze Tea", desc: "", price: 4 },
+    { id: "s5", cat: "Softs", name: "Limonade", desc: "", price: 4 },
+    { id: "s12", cat: "Softs", name: "Diabolo", desc: "Choisir le sirop", price: 4.5, opts: SIROPS },
+    { id: "s10", cat: "Softs", name: "Sirop à l'eau", desc: "Choisir le sirop", price: 4.5, opts: SIROPS },
+    { id: "s7", cat: "Softs", name: "Perrier", desc: "Nature ou avec sirop", price: 4, opts: ["Nature", ...SIROPS], optPrices: Object.fromEntries(SIROPS.map(x => [x, 4.5])) },
+    { id: "s14", cat: "Softs", name: "Corona 0,0", desc: "Sans alcool", price: 4 },
+    { id: "s15", cat: "Softs", name: "Jus de fruits", desc: "Choisir le parfum", price: 4, opts: ["Abricot", "Ananas", "Orange", "Tomate"] },
   ];
   // Anciens produits remplacés par une version plus détaillée
   const RETIRED = ["b4", "b5", "b6", "s4", "s8", "s9", "s6", "s13"];
@@ -297,6 +297,15 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
     menu.sort((a, b) => {
       const ia = DEFAULT_MENU.findIndex(d => d.id === a.id), ib = DEFAULT_MENU.findIndex(d => d.id === b.id);
       return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
+    });
+    // Nouveaux prix de la carte : appliqués seulement aux produits encore à l'ancien prix par défaut
+    const OLD_PRICES = { k2: 9, s1: 5, s2: 5, s3: 5, s11: 5, s5: 5, s12: 5, s10: 5, s7: 5, s14: 5, s15: 5 };
+    Object.entries(OLD_PRICES).forEach(([id, was]) => {
+      const cur = menu.find(m => m.id === id), d = DEFAULT_MENU.find(x => x.id === id);
+      if (!cur || !d) return;
+      if (cur.price === was) cur.price = d.price;
+      if (id === "s7" && cur.optPrices && d.optPrices)
+        Object.keys(cur.optPrices).forEach(o => { if (cur.optPrices[o] === 5.5 && d.optPrices[o] != null) cur.optPrices[o] = d.optPrices[o]; });
     });
     let old = store.get("3t-order", {});
     Object.keys(old).forEach(k => { if (RETIRED.includes(k.split("::")[0])) delete old[k]; });
