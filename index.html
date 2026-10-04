@@ -669,7 +669,6 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
     const m = byId(id);
     openSheet(`
       <h3>${esc(m.name)}</h3>
-      <p class="note">${priceRange(m)} · touchez un choix pour l'ajouter</p>
       <div class="opts">${m.opts.map(o => {
         const q = order[id + "::" + o] || 0;
         return `<div class="opt${q ? " has" : ""}">
@@ -1154,7 +1153,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   if (!owner) openOwner(true);
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 37;
+const APP_VERSION = 38;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
