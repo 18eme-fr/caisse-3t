@@ -161,7 +161,7 @@ section.rayon h2 {
 .ticket .total strong { font-family: var(--display); font-size: 2rem; font-weight: 800; }
 
 .label { font-size: .78rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 700; }
-.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.seg { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .seg button { border: 1.5px solid var(--line); background: var(--surface); border-radius: 12px; padding: 12px 6px; font-weight: 700; min-height: 48px; }
 .seg button[aria-pressed="true"] { border-color: var(--wine); background: var(--wine-soft); color: var(--wine); }
 .cash { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
@@ -199,7 +199,15 @@ section.rayon h2 {
 
 .hist { font-size: .85rem; }
 .hist .row { display: flex; justify-content: space-between; padding-block: 8px; border-bottom: 1px dashed var(--line); gap: 10px; }
-.hist .row span:first-child { color: var(--muted); }
+.hist .row { align-items: center; }
+.hist .h-main { flex: 1; min-width: 0; color: var(--ink); }
+.hist .h-main small { display: block; color: var(--muted); font-size: .75rem; overflow-wrap: anywhere; }
+.hist .h-amt { font-weight: 700; white-space: nowrap; }
+.hist .h-del { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 8px; font-size: .75rem; color: var(--muted); }
+.hist .h-del.armed { border-color: var(--warn); color: var(--warn); }
+.ticket .row-edit { grid-template-columns: 2.2em 1fr auto; align-items: center; }
+.stepper { display: flex; gap: 6px; }
+.stepper button { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--wine); background: var(--surface); color: var(--wine); font-size: 1.2rem; font-weight: 700; }
 .note { color: var(--muted); font-size: .8rem; line-height: 1.4; margin: 0; }
 
 .toast {
@@ -323,6 +331,44 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   }
   let order = store.get("3t-order", {});       // id -> qty
   let sales = store.get("3t-sales", []);        // { t, total, mode, lines }
+  let closed = store.get("3t-closed", []);      // soirées clôturées : { day, total, count, byMode, byItem }
+
+  // Une soirée va de 6 h à 6 h le lendemain : une vente à 1 h du matin compte pour la veille
+  function serviceDay(t = Date.now()) {
+    const d = new Date(t - 6 * 3600 * 1000);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+  const todaySales = () => sales.filter(x => serviceDay(x.t) === serviceDay());
+  function summarize(list) {
+    const byMode = {}, byItem = {};
+    list.forEach(x => {
+      byMode[x.mode] = (byMode[x.mode] || 0) + x.total;
+      x.lines.forEach(l => byItem[l.n] = (byItem[l.n] || 0) + l.q);
+    });
+    return { total: list.reduce((a, x) => a + x.total, 0), count: list.length, byMode, byItem };
+  }
+  // Range des ventes dans l'historique des soirées (fusionne si la soirée y est déjà)
+  function archive(list) {
+    const byDay = {};
+    list.forEach(x => (byDay[serviceDay(x.t)] = byDay[serviceDay(x.t)] || []).push(x));
+    Object.entries(byDay).forEach(([day, l]) => {
+      const sm = summarize(l), prev = closed.find(c => c.day === day);
+      if (prev) {
+        prev.total += sm.total; prev.count += sm.count;
+        Object.entries(sm.byMode).forEach(([k, v]) => prev.byMode[k] = (prev.byMode[k] || 0) + v);
+        Object.entries(sm.byItem).forEach(([k, v]) => prev.byItem[k] = (prev.byItem[k] || 0) + v);
+      } else closed.push({ day, ...sm });
+    });
+    const gone = new Set(list);
+    sales = sales.filter(x => !gone.has(x));
+    closed.sort((a, b) => b.day.localeCompare(a.day));
+    closed = closed.slice(0, 120);
+  }
+  // Les soirées passées non clôturées sont rangées automatiquement à l'ouverture
+  {
+    const past = sales.filter(x => serviceDay(x.t) !== serviceDay());
+    if (past.length) { archive(past); store.set("3t-sales", sales); store.set("3t-closed", closed); }
+  }
   let editing = false;
 
   const $ = s => document.querySelector(s);
@@ -355,7 +401,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   const total = () => lines().reduce((s, l) => s + l.q * l.price, 0);
   const count = () => lines().reduce((s, l) => s + l.q, 0);
 
-  function save() { store.set("3t-menu", menu); store.set("3t-order", order); store.set("3t-sales", sales); }
+  function save() { store.set("3t-menu", menu); store.set("3t-order", order); store.set("3t-sales", sales); store.set("3t-closed", closed); }
 
   function buzz() { try { navigator.vibrate && navigator.vibrate(12); } catch {} }
 
@@ -365,8 +411,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   }
 
   function renderDay() {
-    const today = new Date().toDateString();
-    const s = sales.filter(x => new Date(x.t).toDateString() === today);
+    const s = todaySales();
     const sum = s.reduce((a, x) => a + x.total, 0);
     $("#day").innerHTML = s.length
       ? `<span>Ce soir : <b>${s.length}</b> commande${s.length > 1 ? "s" : ""}</span><span>Encaissé : <b>${eur(sum)}</b></span>`
@@ -473,7 +518,8 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
 
   function renderPay() {
     const t = total();
-    const rows = lines().map(l => `<div class="row"><span class="q">${l.q}×</span><span class="l">${esc(label(l))}<small>${eur(l.price)} l'unité</small></span><span>${eur(l.q * l.price)}</span></div>`).join("");
+    const rows = lines().map(l => `<div class="row row-edit"><span class="q">${l.q}×</span><span class="l">${esc(label(l))}<small>${eur(l.price)} l'unité · ${eur(l.q * l.price)}</small></span>
+      <span class="stepper"><button type="button" data-line="${esc(l.key)}" data-d="-1" aria-label="Retirer un ${esc(label(l))}">−</button><button type="button" data-line="${esc(l.key)}" data-d="1" aria-label="Ajouter un ${esc(label(l))}">+</button></span></div>`).join("");
     const diff = given - t;
     const cashBlock = payMode === "Espèces" ? `
       <div class="label">Somme reçue</div>
@@ -484,24 +530,33 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
         <button type="button" data-cash="0">Effacer</button>
       </div>
       <div class="given"><input id="given" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Montant donné" value="${given || ""}"></div>
-      <div class="change ${given ? (diff >= 0 ? "pos" : "neg") : ""}">
-        <span>${given && diff < 0 ? "Il manque" : "À rendre"}</span>
-        <strong>${given ? eur(Math.abs(diff)) : "—"}</strong>
-      </div>` : "";
+      <div class="change" id="change"><span></span><strong></strong></div>` : "";
     openSheet(`
       <h3>Addition</h3>
       <div class="ticket">${rows}
         <div class="total"><span>Total</span><strong>${eur(t)}</strong></div>
       </div>
       <div class="label">Paiement</div>
-      <div class="seg">${["Espèces", "Chèque", "Tickets tapas"].map(m => `<button type="button" data-mode="${m}" aria-pressed="${m === payMode}">${m}</button>`).join("")}</div>
+      <div class="seg">${["Espèces", "CB", "Chèque", "Tickets tapas"].map(m => `<button type="button" data-mode="${m}" aria-pressed="${m === payMode}">${m}</button>`).join("")}</div>
       ${cashBlock}
       <div class="actions">
         <button class="btn ghost" type="button" data-close>Retour</button>
-        <button class="btn ok" type="button" data-done ${payMode === "Espèces" && given && diff < 0 ? "disabled" : ""}>Encaisser ${eur(t)}</button>
+        <button class="btn ok" type="button" data-done id="btn-done">Encaisser ${eur(t)}</button>
       </div>`);
     const inp = $("#given");
-    if (inp) inp.addEventListener("change", () => { given = parseFloat(inp.value.replace(",", ".")) || 0; renderPay(); });
+    if (inp) inp.addEventListener("input", () => { given = parseFloat(inp.value.replace(",", ".")) || 0; updateChange(); });
+    updateChange();
+  }
+  // Monnaie à rendre, mise à jour à chaque chiffre tapé
+  function updateChange() {
+    const box = $("#change"), done = $("#btn-done");
+    const diff = Math.round((given - total()) * 100) / 100;
+    if (box) {
+      box.className = "change" + (given ? (diff >= 0 ? " pos" : " neg") : "");
+      box.querySelector("span").textContent = given && diff < 0 ? "Il manque" : "À rendre";
+      box.querySelector("strong").textContent = given ? eur(Math.abs(diff)) : "—";
+    }
+    if (done) done.disabled = payMode === "Espèces" && given > 0 && diff < 0;
   }
 
   $("#sheet").addEventListener("click", e => {
@@ -510,10 +565,14 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
     if (t.dataset.pick) { bump(pickId + "::" + t.dataset.pick, 1); closeSheet(); toast(`${byId(pickId).name} · ${t.dataset.pick}`); return; }
     if (t.dataset.unpick) { bump(pickId + "::" + t.dataset.unpick, -1); return openPick(pickId); }
     if (t.dataset.mode) { payMode = t.dataset.mode; return renderPay(); }
+    if (t.dataset.line) { bump(t.dataset.line, +t.dataset.d); return count() ? renderPay() : closeSheet(); }
+    if (t.dataset.cancel) return cancelSale(t);
+    if (t.hasAttribute("data-copy")) return copyRecap();
     if (t.dataset.cash !== undefined) { given = +t.dataset.cash; return renderPay(); }
     if (t.dataset.cashadd) { given = Math.round((given + +t.dataset.cashadd) * 100) / 100; return renderPay(); }
     if (t.hasAttribute("data-done")) {
       const tot = total();
+      if (!tot && !count()) return closeSheet();
       sales.push({ t: Date.now(), total: tot, mode: payMode, lines: lines().map(l => ({ n: label(l), q: l.q, p: l.price })) });
       order = {}; save(); closeSheet(); render(); toast(`Encaissé : ${eur(tot)}`);
       return;
@@ -579,41 +638,83 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   }
 
   // Soirée
-  $("#btn-hist").addEventListener("click", () => {
-    const today = new Date().toDateString();
-    const s = sales.filter(x => new Date(x.t).toDateString() === today);
-    const sum = s.reduce((a, x) => a + x.total, 0);
-    const byMode = {};
-    s.forEach(x => byMode[x.mode] = (byMode[x.mode] || 0) + x.total);
-    const byItem = {};
-    s.forEach(x => x.lines.forEach(l => byItem[l.n] = (byItem[l.n] || 0) + l.q));
-    const time = t => new Date(t).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const fmtDay = d => new Date(d + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  const time = t => new Date(t).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+
+  function openSoiree() {
+    const s = todaySales();
+    const sm = summarize(s);
+    const items = Object.entries(sm.byItem).sort((a, b) => b[1] - a[1]);
     openSheet(`
-      <h3>Soirée en cours</h3>
+      <h3>Soirée du ${fmtDay(serviceDay())}</h3>
       <div class="ticket">
-        ${Object.entries(byMode).map(([m, v]) => `<div class="row"><span></span><span class="l">${m}</span><span>${eur(v)}</span></div>`).join("") || `<p class="note" style="padding-block:10px">Aucune commande encaissée aujourd'hui.</p>`}
-        <div class="total"><span>${s.length} commande${s.length > 1 ? "s" : ""}</span><strong>${eur(sum)}</strong></div>
+        ${Object.entries(sm.byMode).map(([m, v]) => `<div class="row"><span></span><span class="l">${m}</span><span>${eur(v)}</span></div>`).join("") || `<p class="note" style="padding-block:10px">Aucune commande encaissée ce soir.</p>`}
+        <div class="total"><span>${sm.count} commande${sm.count > 1 ? "s" : ""}</span><strong>${eur(sm.total)}</strong></div>
       </div>
-      ${Object.keys(byItem).length ? `<div class="label">Produits vendus</div><div class="ticket">${Object.entries(byItem).sort((a, b) => b[1] - a[1]).map(([n, q]) => `<div class="row"><span class="q">${q}×</span><span class="l">${esc(n)}</span><span></span></div>`).join("")}</div>` : ""}
-      ${s.length ? `<div class="label">Détail</div><div class="hist">${s.slice().reverse().map(x => `<div class="row"><span>${time(x.t)} · ${x.mode}</span><span>${eur(x.total)}</span></div>`).join("")}</div>` : ""}
-      <p class="note">Les ventes sont gardées sur ce téléphone uniquement. Version de l’appli : ${APP_VERSION}.</p>
+      ${items.length ? `<div class="label">Produits vendus</div><div class="ticket">${items.map(([n, q]) => `<div class="row"><span class="q">${q}×</span><span class="l">${esc(n)}</span><span></span></div>`).join("")}</div>` : ""}
+      ${s.length ? `<div class="label">Commandes</div><div class="hist">${s.slice().reverse().map(x => `
+        <div class="row">
+          <span class="h-main"><b>${time(x.t)}</b> · ${x.mode}<small>${esc(x.lines.map(l => (l.q > 1 ? l.q + "× " : "") + l.n).join(", "))}</small></span>
+          <span class="h-amt">${eur(x.total)}</span>
+          <button type="button" class="h-del" data-cancel="${x.t}" aria-label="Annuler cette commande">Annuler</button>
+        </div>`).join("")}</div>` : ""}
       <div class="actions">
-        <button class="btn ghost" type="button" data-close>Fermer</button>
+        <button class="btn ghost" type="button" data-copy ${s.length ? "" : "disabled"}>Copier le récap</button>
         <button class="btn danger" type="button" data-reset-day ${s.length ? "" : "disabled"}>Clôturer la soirée</button>
-      </div>`);
-  });
+      </div>
+      ${closed.length ? `<div class="label">Soirées précédentes</div><div class="hist">${closed.slice(0, 15).map(c => `
+        <div class="row"><span class="h-main">${fmtDay(c.day)}<small>${c.count} commande${c.count > 1 ? "s" : ""} · ${Object.entries(c.byMode).map(([m, v]) => m + " " + eur(v)).join(" · ")}</small></span><span class="h-amt">${eur(c.total)}</span></div>`).join("")}</div>` : ""}
+      <p class="note">La soirée va jusqu'à 6 h du matin. Les ventes sont gardées sur ce téléphone uniquement. Version de l’appli : ${APP_VERSION}.</p>
+      <button class="btn ghost" type="button" data-close>Fermer</button>
+      <textarea id="recap" class="sr-only" readonly tabindex="-1" aria-hidden="true"></textarea>`);
+  }
+  $("#btn-hist").addEventListener("click", openSoiree);
+
+  function cancelSale(b) {
+    if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = "Confirmer"; b.classList.add("armed"); return; }
+    sales = sales.filter(x => String(x.t) !== b.dataset.cancel);
+    save(); render(); openSoiree(); toast("Commande annulée");
+  }
+
+  function recapText() {
+    const sm = summarize(todaySales());
+    return [
+      `3T · Soirée du ${fmtDay(serviceDay())}`,
+      `${sm.count} commande${sm.count > 1 ? "s" : ""} · Total ${eur(sm.total)}`,
+      ...Object.entries(sm.byMode).map(([m, v]) => `- ${m} : ${eur(v)}`),
+      "",
+      "Produits vendus :",
+      ...Object.entries(sm.byItem).sort((a, b) => b[1] - a[1]).map(([n, q]) => `- ${q}× ${n}`),
+    ].join("\n");
+  }
+  async function copyRecap() {
+    const txt = recapText();
+    try { await navigator.clipboard.writeText(txt); toast("Récap copié : collez-le dans un SMS"); }
+    catch {
+      const ta = $("#recap"); ta.value = txt; ta.select();
+      try { document.execCommand("copy"); toast("Récap copié : collez-le dans un SMS"); } catch { toast("Copie impossible sur ce téléphone"); }
+    }
+  }
+
   function resetDay(b) {
     if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = "Confirmer la clôture"; return; }
-    const today = new Date().toDateString();
-    sales = sales.filter(x => new Date(x.t).toDateString() !== today);
-    save(); closeSheet(); render(); toast("Soirée clôturée");
+    archive(todaySales());
+    save(); closeSheet(); render(); toast("Soirée clôturée et archivée");
   }
+
+  // Garde l'écran allumé pendant le service (si le téléphone le permet)
+  let wake = null;
+  async function keepAwake() {
+    try { if ("wakeLock" in navigator && !document.hidden && !wake) { wake = await navigator.wakeLock.request("screen"); wake.addEventListener("release", () => wake = null); } } catch {}
+  }
+  document.addEventListener("visibilitychange", keepAwake);
+  keepAwake();
 
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
   render();
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 9;
+const APP_VERSION = 10;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
