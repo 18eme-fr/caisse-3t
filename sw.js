@@ -1,7 +1,7 @@
 // Garde l'appli disponible sans réseau. Les fichiers sont servis depuis le cache
 // puis rafraîchis en arrière-plan : une mise à jour s'applique à l'ouverture suivante.
-const CACHE = "caisse-3t-v1";
-const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"];
+const CACHE = "caisse-3t-v2";
+const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png", "logo.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
