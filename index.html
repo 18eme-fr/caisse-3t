@@ -31,6 +31,8 @@
   --wine-soft: #ffe8f1;
   --ok: #ec005c;
   --warn: #b4441c;
+  --give-back: #15803d; /* À rendre : vert */
+  --missing: #dc2626;   /* Il manque : rouge */
   --shadow: 0 1px 2px rgba(120, 0, 50, .07), 0 4px 14px rgba(120, 0, 50, .06);
   --display: "Figtree", -apple-system, "Segoe UI", system-ui, sans-serif;
   --body: "Figtree", -apple-system, "Segoe UI", system-ui, sans-serif;
@@ -259,8 +261,12 @@ section.rayon h2 {
 .given input { flex: 1; min-width: 0; font: inherit; font-size: 1.2rem; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
 .change { display: flex; justify-content: space-between; align-items: baseline; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
 .change strong { font-family: var(--display); font-size: 1.6rem; }
-.change.pos strong { color: var(--ok); }
-.change.neg strong { color: var(--warn); }
+.change.pos strong { color: var(--give-back); }
+.change.neg strong { color: var(--missing); }
+.change.pos { border-color: var(--give-back); background: #f0fdf4; }
+.change.neg { border-color: var(--missing); background: #fef2f2; }
+.change.pos span { color: var(--give-back); font-weight: 700; }
+.change.neg span { color: var(--missing); font-weight: 700; }
 .actions { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
 
 /* Choix de variante */
@@ -1146,7 +1152,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   if (!owner) openOwner(true);
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 33;
+const APP_VERSION = 34;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
