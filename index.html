@@ -594,7 +594,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
       </div>
       ${Object.keys(byItem).length ? `<div class="label">Produits vendus</div><div class="ticket">${Object.entries(byItem).sort((a, b) => b[1] - a[1]).map(([n, q]) => `<div class="row"><span class="q">${q}×</span><span class="l">${esc(n)}</span><span></span></div>`).join("")}</div>` : ""}
       ${s.length ? `<div class="label">Détail</div><div class="hist">${s.slice().reverse().map(x => `<div class="row"><span>${time(x.t)} · ${x.mode}</span><span>${eur(x.total)}</span></div>`).join("")}</div>` : ""}
-      <p class="note">Les ventes sont gardées sur ce téléphone uniquement.</p>
+      <p class="note">Les ventes sont gardées sur ce téléphone uniquement. Version de la carte : ${MENU_VERSION}.</p>
       <div class="actions">
         <button class="btn ghost" type="button" data-close>Fermer</button>
         <button class="btn danger" type="button" data-reset-day ${s.length ? "" : "disabled"}>Clôturer la soirée</button>
@@ -611,7 +611,19 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   render();
 })();
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => {
+      // Sur iPhone, l'appli reste ouverte en arrière-plan : on cherche une mise à jour à chaque retour dessus
+      document.addEventListener("visibilitychange", () => { if (!document.hidden) reg.update().catch(() => {}); });
+    }).catch(() => {});
+  });
+  // Nouvelle version installée : recharge une fois, sans toucher à la commande en cours (elle est enregistrée)
+  let reloaded = false;
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadController || reloaded) return;
+    reloaded = true; location.reload();
+  });
 }
 </script>
 </body>

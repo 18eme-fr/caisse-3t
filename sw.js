@@ -1,10 +1,14 @@
-// Garde l'appli disponible sans réseau. Les fichiers sont servis depuis le cache
-// puis rafraîchis en arrière-plan : une mise à jour s'applique à l'ouverture suivante.
-const CACHE = "caisse-3t-v4";
+// Garde l'appli disponible sans réseau.
+// La page est toujours demandée au réseau d'abord (version la plus récente),
+// la copie locale ne sert que lorsqu'il n'y a pas de connexion.
+const CACHE = "caisse-3t-v5";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png", "logo.png"];
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
+  // cache: "reload" contourne le cache HTTP du navigateur, sinon une ancienne page pourrait être recopiée
+  e.waitUntil(caches.open(CACHE)
+    .then(c => c.addAll(FILES.map(f => new Request(f, { cache: "reload" }))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", e => {
@@ -14,11 +18,28 @@ self.addEventListener("activate", e => {
 });
 
 self.addEventListener("fetch", e => {
-  if (e.request.method !== "GET") return;
+  const req = e.request;
+  if (req.method !== "GET") return;
+  const url = new URL(req.url);
+  const isPage = req.mode === "navigate" || (url.origin === location.origin && /\/(index\.html)?$/.test(url.pathname));
+
+  if (isPage) {
+    e.respondWith(
+      fetch(req, { cache: "no-store" })
+        .then(res => {
+          if (res.ok) caches.open(CACHE).then(c => c.put("index.html", res.clone()));
+          return res;
+        })
+        .catch(() => caches.match("index.html"))
+    );
+    return;
+  }
+
+  // Icônes, logo, polices : copie locale, rafraîchie en arrière-plan
   e.respondWith(caches.open(CACHE).then(async cache => {
-    const cached = await cache.match(e.request, { ignoreSearch: true });
-    const fresh = fetch(e.request).then(res => {
-      if (res && (res.ok || res.type === "opaque")) cache.put(e.request, res.clone());
+    const cached = await cache.match(req, { ignoreSearch: true });
+    const fresh = fetch(req).then(res => {
+      if (res && (res.ok || res.type === "opaque")) cache.put(req, res.clone());
       return res;
     }).catch(() => cached);
     return cached || fresh;
