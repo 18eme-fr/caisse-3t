@@ -53,6 +53,11 @@ header.top {
   border-bottom: 1px solid var(--line);
 }
 .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.owner {
+  min-width: 0; max-width: 40vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: auto;
+  border: 0; background: var(--wine-soft); color: var(--wine-text); font-weight: 700; font-size: .85rem; border-radius: 999px; padding: 6px 12px;
+}
+.linkish { border: 0; background: none; padding: 0; color: var(--wine-text); font-weight: 700; text-decoration: underline; font-size: inherit; }
 .logo-btn { border: 0; padding: 0; background: none; border-radius: 10px; flex: none; }
 .brand .logo { height: 52px; width: auto; background: #fff; border-radius: 10px; padding: 3px 5px; flex: none; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -269,6 +274,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   <div class="brand">
     <button type="button" class="logo-btn" id="btn-cal" aria-label="Calendrier des soirées"><img class="logo" src="logo.png" width="196" height="160" alt="3T Théâtre Apéro Tapas"></button>
     <h1 class="sr-only">Caisse du 3T</h1>
+    <button type="button" class="owner" id="btn-owner" hidden></button>
   </div>
   <div class="top-actions">
     <button class="chip-btn" id="btn-hist" type="button">Soirée</button>
@@ -844,6 +850,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
     const items = Object.entries(sm.byItem).sort((a, b) => b[1] - a[1]);
     openSheet(`
       <h3>Soirée du ${fmtDay(serviceDay())}</h3>
+      <p class="note">${owner ? `Caisse de <b>${esc(owner)}</b> · ` : ""}<button type="button" class="linkish" data-owner>${owner ? "Changer le nom" : "Donner un nom à cette caisse"}</button></p>
       <div class="ticket">
         ${Object.entries(sm.byMode).map(([m, v]) => `<div class="row"><span></span><span class="l">${m}</span><span>${eur(v)}</span></div>`).join("") || `<p class="note" style="padding-block:10px">Aucune commande encaissée ce soir.</p>`}
         <div class="total"><span>${sm.count} commande${sm.count > 1 ? "s" : ""}</span><strong>${eur(sm.total)}</strong></div>
@@ -942,7 +949,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   function recapText() {
     const sm = summarize(todaySales());
     return [
-      `3T · Soirée du ${fmtDay(serviceDay())}`,
+      `3T · ${owner ? "Caisse de " + owner + " · " : ""}Soirée du ${fmtDay(serviceDay())}`,
       `${sm.count} commande${sm.count > 1 ? "s" : ""} · Total ${eur(sm.total)}`,
       ...Object.entries(sm.byMode).map(([m, v]) => `- ${m} : ${eur(v)}`),
       "",
@@ -974,10 +981,43 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   keepAwake();
 
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
+  // Chaque téléphone a sa propre caisse : un prénom permet de la reconnaître
+  // et figure sur le récap envoyé en fin de soirée
+  let owner = store.get("3t-owner", "");
+  function renderOwner() {
+    const b = $("#btn-owner"); b.hidden = !owner; b.textContent = owner;
+    b.setAttribute("aria-label", "Caisse de " + owner + ", changer le nom");
+  }
+  function openOwner(first) {
+    openSheet(`
+      <h3>${first ? "Bienvenue sur la caisse du 3T" : "Nom de cette caisse"}</h3>
+      <p class="note">Cette caisse est propre à ce téléphone : ses notes, sa soirée et son calendrier ne sont partagés avec personne. Indiquez votre prénom pour la reconnaître ; il apparaîtra sur le récap de fin de soirée.</p>
+      <form class="form" id="oform"><label>Votre prénom<input id="f-owner" value="${esc(owner)}" maxlength="20" autocomplete="given-name" placeholder="ex. Julie"></label></form>
+      <div class="actions">
+        <button class="btn ghost" type="button" data-close>${first ? "Plus tard" : "Annuler"}</button>
+        <button class="btn" type="button" data-owner-save>${first ? "Commencer" : "Enregistrer"}</button>
+      </div>`);
+    $("#oform").addEventListener("submit", e => { e.preventDefault(); saveOwner(); });
+  }
+  function saveOwner() {
+    const v = $("#f-owner").value.trim();
+    if (!v) { toast("Indiquez un prénom"); return; }
+    owner = v; store.set("3t-owner", owner); renderOwner(); closeSheet(); toast("Caisse de " + owner);
+  }
+  $("#btn-owner").addEventListener("click", () => openOwner(false));
+  $("#sheet").addEventListener("click", e => {
+    const t = e.target.closest("button"); if (!t) return;
+    if (t.hasAttribute("data-owner")) openOwner(false);
+    if (t.hasAttribute("data-owner-save")) saveOwner();
+  });
+
   render();
+  renderOwner();
+  let asked = false; try { asked = sessionStorage.getItem("3t-owner-asked"); } catch {}
+  if (!owner && !asked) { try { sessionStorage.setItem("3t-owner-asked", "1"); } catch {} openOwner(true); }
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 22;
+const APP_VERSION = 23;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale

@@ -13,9 +13,11 @@ Plusieurs notes peuvent rester ouvertes en même temps (une par table ou par cli
 
 L'appli s'ouvre alors en plein écran et fonctionne sans réseau.
 
+Affiche à imprimer avec le QR code : [`QR-caisse-3T.png`](QR-caisse-3T.png)
+
 ## À savoir
 
-- La carte et les ventes sont enregistrées sur chaque téléphone. Elles ne sont pas partagées entre plusieurs téléphones.
+- Chaque téléphone a sa propre caisse (notes, soirée, calendrier), jamais partagée avec les autres. Un prénom, demandé à la première ouverture, l'identifie et figure sur le récap de fin de soirée.
 - Une soirée va de 6 h à 6 h le lendemain. Les soirées passées sont archivées automatiquement dans l'écran « Soirée ».
 - Toucher le logo 3T ouvre le calendrier des soirées : total par jour et par mois, détail de chaque soirée.
 - L'appli se met à jour toute seule à l'ouverture et à chaque retour dessus. Aucune réinstallation n'est nécessaire.
