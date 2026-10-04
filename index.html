@@ -8,8 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Caisse 3T">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#fbf5f7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1a0f14" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -18,33 +17,22 @@
 <style>
 /* Layout : grille de tuiles tactiles par rayon, barre d'addition fixée en bas, feuille d'encaissement qui monte du bas */
 :root {
-  /* Charte du logo 3T : rose framboise #EC005C, utilisé tel quel pour les aplats et les textes. */
-  --bg: #fbf5f7;
+  /* Charte du logo 3T : blanc et rose framboise #EC005C, comme le logo. Un seul thème, clair. */
+  color-scheme: light;
+  --bg: #ffffff;
   --surface: #ffffff;
   --ink: #2a0f1c;
-  --muted: #7e6170;
-  --line: #f0dce5;
+  --muted: #a0577a;
+  --line: #f7c6da;
   --wine: #ec005c;
   --wine-text: #ec005c;
   --wine-ink: #ffffff;
-  --wine-soft: #fde4ee;
-  --ok: #1f7a4a;
+  --wine-soft: #ffe8f1;
+  --ok: #ec005c;
   --warn: #b4441c;
   --shadow: 0 1px 2px rgba(120, 0, 50, .07), 0 4px 14px rgba(120, 0, 50, .06);
   --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
   --body: "Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #1a0f14; --surface: #26161e; --ink: #f8e9f0; --muted: #b99aa8; --line: #3e2431;
-    --wine: #ff3d8b; --wine-text: #ff6fa6; --wine-ink: #1a0b12; --wine-soft: #4a1530; --ok: #5cc48a; --warn: #f08a62;
-    --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #1a0f14; --surface: #26161e; --ink: #f8e9f0; --muted: #b99aa8; --line: #3e2431;
-    --wine: #ff3d8b; --wine-text: #ff6fa6; --wine-ink: #1a0b12; --wine-soft: #4a1530; --ok: #5cc48a; --warn: #f08a62;
-  --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
 }
 [hidden] { display: none !important; }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -87,7 +75,7 @@ header.top {
 section.rayon { padding-block: 10px; }
 section.rayon h2 {
   font-family: var(--display); font-weight: 600; font-size: .78rem; text-transform: uppercase;
-  letter-spacing: .12em; color: var(--muted); margin: 0 0 10px;
+  letter-spacing: .12em; color: var(--wine-text); margin: 0 0 10px;
   position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--head-h, 72px)); z-index: 4;
   background: var(--bg); padding-block: 8px; margin-inline: -16px; padding-inline: 16px;
 }
@@ -126,10 +114,20 @@ section.rayon h2 {
 /* Barre du bas */
 .bar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
-  background: var(--surface); border-top: 1px solid var(--line);
+  background: var(--wine); color: #fff;
   padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
-  box-shadow: 0 -6px 20px rgba(40, 10, 20, .08);
+  box-shadow: 0 -6px 20px rgba(120, 0, 50, .15);
 }
+.bar .sum small { color: #fff !important; opacity: .85; }
+.bar #btn-pay { background: #fff; color: var(--wine); }
+.bar #btn-clear { background: transparent; color: #fff; border: 1.5px solid rgba(255, 255, 255, .6); }
+.bar .note-chip { background: transparent; color: #fff; border-color: rgba(255, 255, 255, .55); }
+.bar .note-chip small { color: #fff; opacity: .85; }
+.bar .note-chip.on { background: #fff; color: var(--wine); border-color: #fff; }
+.bar .note-chip.on small { color: var(--wine); opacity: 1; }
+.bar .note-chip.add { color: #fff; border-color: rgba(255, 255, 255, .7); }
+.bar .note-chip.all { background: transparent; color: #fff; }
+.bar .note-chip.all b { background: #fff; color: var(--wine); }
 .notes-row { max-width: 868px; margin: 0 auto 10px; display: flex; gap: 8px; align-items: center; }
 .notes { flex: 1; min-width: 0; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
 .notes::-webkit-scrollbar { display: none; }
@@ -260,7 +258,7 @@ section.rayon h2 {
 
 .toast {
   position: fixed; left: 50%; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
-  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-weight: 500; z-index: 30;
+  background: #fff; color: var(--wine); border: 1.5px solid var(--wine); box-shadow: var(--shadow); padding: 10px 16px; font-weight: 700; border-radius: 999px; font-weight: 500; z-index: 30;
   font-size: .9rem; white-space: nowrap;
 }
 html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
@@ -555,7 +553,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
     const c = count(), i = notes.findIndex(n => n.id === activeId);
     $("#btn-notes-all").hidden = notes.length < 2;
     $("#notes-n").textContent = notes.length;
-    $("#bar-count").textContent = (notes.length > 1 ? `‹ ${active().name} (${i + 1}/${notes.length}) › · ` : "") + (c ? `${c} article${c > 1 ? "s" : ""}` : "Note vide");
+    $("#bar-count").textContent = (notes.length > 1 ? `‹ ${i + 1}/${notes.length} › · ` : "") + (c ? `${c} article${c > 1 ? "s" : ""}` : "Note vide");
     $("#bar-total").textContent = eur(total());
     $("#btn-pay").disabled = !c;
     $("#btn-clear").disabled = !c;
@@ -979,7 +977,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   render();
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 21;
+const APP_VERSION = 22;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
