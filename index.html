@@ -58,11 +58,13 @@ header.top {
   min-width: 0; max-width: 40vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: auto;
   border: 0; background: var(--wine-soft); color: var(--wine-text); font-weight: 700; font-size: .85rem; border-radius: 999px; padding: 6px 12px;
 }
-.sheet.center {
-  top: 50%; bottom: auto; left: 16px; right: 16px; max-width: 400px; margin: 0 auto;
-  transform: translateY(-50%); border-radius: 20px; padding: 24px 20px; animation: pop-in .26s cubic-bezier(.22, 1, .36, 1);
+.sheet.center { overflow: hidden; scroll-snap-type: none; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.sheet.center .sheet-space { display: none; }
+.sheet.center .sheet-panel {
+  width: 100%; max-width: 400px; border-radius: 20px; padding: 24px 20px;
+  animation: pop-in .26s cubic-bezier(.22, 1, .36, 1);
 }
-.sheet.center.closing { animation: pop-out .18s ease-in forwards; }
+.sheet.center.closing .sheet-panel { animation: pop-out .18s ease-in forwards; }
 .owner-form { align-items: center; text-align: center; }
 .form.owner-form label { font-family: var(--display); font-weight: 700; font-size: 1.3rem; color: var(--wine-text); }
 .form.owner-form input { width: 100%; text-align: center; font-size: 1.2rem; }
@@ -201,37 +203,42 @@ section.rayon h2 {
 .btn.ok { background: var(--ok); color: var(--wine-ink); }
 
 /* Feuille d'addition */
-.scrim { position: fixed; inset: 0; background: rgba(20, 8, 12, .45); z-index: 20; animation: fade-in .25s ease-out; will-change: opacity; }
-.scrim.closing { animation: fade-out .22s ease-in forwards; }
+.scrim { position: fixed; inset: 0; background: rgba(20, 8, 12, .45); z-index: 20; will-change: opacity; }
+.scrim.fade { animation: fade-in .25s ease-out; }
+.scrim.closing { animation: fade-out .2s ease-in forwards; }
+/* La fenêtre est une page qui défile : un espace vide (fermée) puis le panneau (ouverte).
+   Le glissé est donc géré par le défilement natif du téléphone, aussi fluide que Safari,
+   et s'arrête toujours sur l'une des deux positions. */
 .sheet {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; max-height: 92%;
-  background: var(--bg); border-radius: 20px 20px 0 0; overflow-y: auto;
-  padding: 8px 16px calc(16px + env(safe-area-inset-bottom, 0px));
-  animation: sheet-in .32s cubic-bezier(.22, 1, .36, 1);
-  will-change: transform; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  position: fixed; inset: 0; z-index: 21; overflow-x: hidden; overflow-y: auto;
+  scroll-snap-type: y mandatory; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: none;
 }
-.sheet.dragging { overflow: hidden; }
-.sheet.closing { animation: sheet-out .22s cubic-bezier(.4, 0, 1, 1) forwards; }
+.sheet::-webkit-scrollbar { display: none; }
+.sheet-space { height: 100%; scroll-snap-align: start; }
+.sheet-panel {
+  scroll-snap-align: end; background: var(--bg); border-radius: 20px 20px 0 0;
+  padding: 8px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -10px 30px rgba(120, 0, 50, .12);
+}
+.sheet-panel.tall { scroll-snap-align: start; scroll-margin-top: 6vh; }
 .sheet-in { max-width: 620px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
-@keyframes sheet-in { from { transform: translate3d(0, 100%, 0); } to { transform: translate3d(0, 0, 0); } }
-@keyframes sheet-out { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, 100%, 0); } }
-@keyframes pop-in { from { opacity: 0; transform: translateY(-50%) scale(.94); } to { opacity: 1; transform: translateY(-50%); } }
-@keyframes pop-out { from { opacity: 1; transform: translateY(-50%); } to { opacity: 0; transform: translateY(-50%) scale(.96); } }
+@keyframes pop-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes pop-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(.96); } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
-  .sheet, .sheet.center, .sheet.closing, .scrim, .scrim.closing { animation: none; }
+  .sheet-panel, .sheet.center .sheet-panel, .sheet.center.closing .sheet-panel, .scrim, .scrim.fade, .scrim.closing { animation: none; }
   .tile, .toast, .note-chip { transition: none; }
 }
 /* Poignée : toucher pour fermer, ou glisser la fenêtre vers le bas */
 .grab {
-  position: sticky; top: -8px; z-index: 2; display: flex; justify-content: center; align-items: center;
+  position: sticky; top: 0; z-index: 2; display: flex; justify-content: center; align-items: center;
   width: calc(100% + 32px); height: 34px; margin: -8px -16px -10px; padding: 0; border: 0;
-  background: var(--bg); border-radius: 20px 20px 0 0; touch-action: none; cursor: grab; -webkit-user-select: none; user-select: none;
+  background: var(--bg); border-radius: 20px 20px 0 0; -webkit-user-select: none; user-select: none;
 }
 .grab::before { content: ""; width: 46px; height: 6px; border-radius: 3px; background: var(--line); transition: background-color .15s; }
-.grab:active::before, .sheet.dragging .grab::before { background: var(--wine); }
-.sheet h3 { touch-action: none; font-family: var(--display); font-weight: 800; font-size: 1.4rem; letter-spacing: -.02em; margin: 0;  }
+.grab:active::before { background: var(--wine); }
+.sheet h3 { font-family: var(--display); font-weight: 800; font-size: 1.4rem; letter-spacing: -.02em; margin: 0;  }
 .ticket { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 6px 14px; }
 .ticket .row { display: grid; grid-template-columns: 2.2em 1fr auto; gap: 8px; padding-block: 9px; border-bottom: 1px dashed var(--line); align-items: baseline; }
 .ticket .row:last-child { border-bottom: 0; }
@@ -335,7 +342,10 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
 </div>
 
 <div class="scrim" id="scrim" hidden></div>
-<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true"><div class="sheet-in" id="sheet-in"></div></div>
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true">
+  <div class="sheet-space" id="sheet-space" aria-hidden="true"></div>
+  <div class="sheet-panel" id="sheet-panel"><div class="sheet-in" id="sheet-in"></div></div>
+</div>
 <div class="toast" id="toast" hidden></div>
 
 <script>
@@ -751,93 +761,76 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
     render();
   });
 
-  // Feuille
+  // Feuille (fenêtre) : en bas de l'écran, elle est portée par le défilement natif ;
+  // au centre (prénom), elle apparaît en fondu
   let sheetLocked = false; // fenêtre qu'on ne peut pas fermer sans la remplir
-  let closeTimer = null;
-  function openSheet(html, opts = {}) {
-    const sh = $("#sheet"), sc = $("#scrim");
-    const content = (opts.center ? "" : `<button type="button" class="grab" data-close aria-label="Fermer"></button>`) + html;
-    const wasOpen = !sh.hidden && !sh.classList.contains("closing") && sh.classList.contains("center") === !!opts.center;
-    clearTimeout(closeTimer);
-    sheetLocked = !!opts.locked;
-    if (wasOpen) { patch($("#sheet-in"), content); return; }
-    $("#sheet-in").innerHTML = content;
-    sh.classList.toggle("center", !!opts.center);
-    for (const el of [sh, sc]) { el.classList.remove("closing"); el.style.animation = "none"; el.hidden = false; void el.offsetWidth; el.style.animation = ""; }
-    sh.scrollTop = 0;
+  let closeTimer = null, openPos = 1, openedAt = 0, sheetState = "closed"; // closed | opening | open | closing
+  const sh = $("#sheet"), sc = $("#scrim"), panel = $("#sheet-panel");
+  const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Position de défilement où la fenêtre est ouverte (panneau calé en bas, ou presque en haut s'il est long)
+  function measureOpen() {
+    const vh = sh.clientHeight, ph = panel.offsetHeight, tall = ph > vh * .92;
+    panel.classList.toggle("tall", tall);
+    openPos = Math.max(1, tall ? Math.round(vh * .94) : ph);
+    return openPos;
   }
-  function closeSheet() {
-    const sh = $("#sheet"), sc = $("#scrim");
-    if (sheetLocked || sh.hidden || sh.classList.contains("closing")) return;
-    if (sh.style.transform) {
-      // fenêtre en cours de glissé : elle continue sa course vers le bas
-      sh.classList.add("closing"); sh.style.animation = "none";
-      sh.style.transition = "transform .24s cubic-bezier(.3, .7, .4, 1)"; sh.style.transform = "translate3d(0, 100%, 0)";
-      sc.style.transition = "opacity .2s"; sc.style.opacity = "0";
-      closeTimer = setTimeout(() => {
-        sh.hidden = true; sc.hidden = true; sh.classList.remove("closing");
-        for (const el of [sh, sc]) { el.style.transition = ""; el.style.transform = ""; el.style.opacity = ""; el.style.animation = ""; }
-      }, 240);
+  function finishClose() {
+    clearTimeout(closeTimer);
+    sh.hidden = true; sc.hidden = true; sheetState = "closed";
+    sh.classList.remove("closing", "center"); sc.classList.remove("closing", "fade"); sc.style.opacity = "";
+  }
+  function openSheet(html, opts = {}) {
+    const content = (opts.center ? "" : `<button type="button" class="grab" data-close aria-label="Fermer"></button>`) + html;
+    const center = !!opts.center;
+    sheetLocked = !!opts.locked;
+    if ((sheetState === "open" || sheetState === "opening") && sh.classList.contains("center") === center) {
+      patch($("#sheet-in"), content);
+      if (!center && sheetState === "open") sh.scrollTop = measureOpen();
       return;
     }
-    sh.style.animation = ""; sh.classList.add("closing"); sc.classList.add("closing");
-    const ms = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 220;
-    closeTimer = setTimeout(() => { sh.hidden = true; sc.hidden = true; sh.classList.remove("closing"); sc.classList.remove("closing"); }, ms);
+    clearTimeout(closeTimer);
+    $("#sheet-in").innerHTML = content;
+    sh.classList.remove("closing"); sc.classList.remove("closing", "fade");
+    sh.classList.toggle("center", center);
+    sh.hidden = false; sc.hidden = false;
+    if (center) {
+      sc.style.opacity = ""; void sc.offsetWidth; sc.classList.add("fade");
+      sheetState = "open"; return;
+    }
+    sc.style.opacity = "0";
+    sh.scrollTop = 0;
+    const to = measureOpen();
+    sheetState = "opening"; openedAt = performance.now();
+    if (reduceMotion()) { sh.scrollTop = to; sheetState = "open"; sc.style.opacity = "1"; }
+    else requestAnimationFrame(() => sh.scrollTo({ top: to, behavior: "smooth" }));
   }
+  function closeSheet() {
+    if (sheetLocked || sheetState === "closed" || sheetState === "closing") return;
+    sheetState = "closing";
+    if (sh.classList.contains("center")) {
+      sh.classList.add("closing"); sc.classList.add("closing");
+      closeTimer = setTimeout(finishClose, reduceMotion() ? 0 : 200);
+      return;
+    }
+    if (reduceMotion()) return finishClose();
+    sh.scrollTo({ top: 0, behavior: "smooth" });
+    closeTimer = setTimeout(finishClose, 700); // sécurité si le défilement est interrompu
+  }
+  // Le fond grisé suit la position de la fenêtre ; arrivée en bas, la fenêtre est fermée
+  let scrollFrame = 0;
+  sh.addEventListener("scroll", () => {
+    if (scrollFrame || sh.classList.contains("center")) return;
+    scrollFrame = requestAnimationFrame(() => {
+      scrollFrame = 0;
+      const y = sh.scrollTop;
+      sc.style.opacity = String(Math.min(1, y / openPos));
+      if (sheetState === "opening" && y >= openPos - 2) sheetState = "open";
+      // (pendant l'ouverture, on ne ferme que si l'utilisateur a renvoyé la fenêtre en bas)
+      else if (y <= 2 && (sheetState !== "opening" || performance.now() - openedAt > 600)) finishClose();
+    });
+  }, { passive: true });
+  $("#sheet-space").addEventListener("click", closeSheet);
   $("#scrim").addEventListener("click", closeSheet);
-  {
-    const sh = $("#sheet"), sc = $("#scrim");
-    let y0 = null, dy = 0, t0 = 0, dragging = false;
-    sh.addEventListener("touchstart", e => {
-      if (sheetLocked || sh.classList.contains("center") || sh.classList.contains("closing")) return;
-      const fromGrab = !!e.target.closest(".grab");
-      if (!fromGrab && (sh.scrollTop > 0 || e.target.closest("input, textarea, select"))) return;
-      y0 = e.touches[0].clientY; dy = 0; t0 = Date.now(); dragging = false;
-    }, { passive: true });
-    // position appliquée une seule fois par image affichée, et vitesse mesurée sur les derniers instants
-    let frame = 0, lastY = 0, lastT = 0, speed = 0;
-    const paint = () => {
-      frame = 0;
-      sh.style.transform = `translate3d(0, ${dy}px, 0)`;
-      sc.style.opacity = String(Math.max(.3, 1 - dy / 600));
-    };
-    sh.addEventListener("touchmove", e => {
-      if (y0 === null) return;
-      const y = e.touches[0].clientY, d = y - y0;
-      if (!dragging) {
-        if (d < 0) { y0 = null; return; }           // geste vers le haut : défilement normal du contenu
-        // Geste vers le bas, fenêtre en haut : on bloque tout de suite le rebond d'iOS,
-        // sinon il démarre avant nous et les deux mouvements se contrarient (saccades)
-        if (!e.cancelable) { y0 = null; return; }
-        e.preventDefault();
-        if (d < 3) return;
-        dragging = true; sh.classList.add("dragging"); sh.style.animation = "none"; sh.style.transition = "none";
-        y0 = y; lastY = y; lastT = performance.now(); // part de la position actuelle : pas de saut
-        return;
-      }
-      e.preventDefault();
-      const now = performance.now();
-      speed = .7 * speed + .3 * ((y - lastY) / Math.max(1, now - lastT));
-      lastY = y; lastT = now;
-      dy = Math.max(0, y - y0);
-      if (!frame) frame = requestAnimationFrame(paint);
-    }, { passive: false });
-    const end = () => {
-      if (y0 === null) return;
-      y0 = null;
-      if (!dragging) return;
-      dragging = false; sh.classList.remove("dragging");
-      if (frame) { cancelAnimationFrame(frame); paint(); }
-      if (dy > 120 || speed > .45) return closeSheet();
-      // pas assez loin : la fenêtre remonte en place
-      sh.style.transition = "transform .3s cubic-bezier(.22, 1, .36, 1)"; sh.style.transform = "translate3d(0, 0, 0)";
-      sc.style.transition = "opacity .28s"; sc.style.opacity = "";
-      // l'animation d'ouverture reste coupée jusqu'à la prochaine ouverture (sinon elle se rejouerait)
-      setTimeout(() => { sh.style.transition = ""; sc.style.transition = ""; }, 300);
-    };
-    sh.addEventListener("touchend", end);
-    sh.addEventListener("touchcancel", end);
-  }
 
   // Addition
   let payMode = "Espèces", given = 0;
@@ -1153,7 +1146,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   if (!owner) openOwner(true);
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 31;
+const APP_VERSION = 32;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
