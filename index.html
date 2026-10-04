@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Caisse du 3T</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Caisse 3T">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f6f1ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#191113" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;700&display=swap">
+<style>
+/* Layout : grille de tuiles tactiles par rayon, barre d'addition fixée en bas, feuille d'encaissement qui monte du bas */
+:root {
+  --bg: #f6f1ef;
+  --surface: #ffffff;
+  --ink: #2a1a1f;
+  --muted: #7a6669;
+  --line: #e6dadb;
+  --wine: #7d1f35;
+  --wine-ink: #ffffff;
+  --wine-soft: #f3e1e5;
+  --ok: #2f7a4f;
+  --warn: #b4441c;
+  --shadow: 0 1px 2px rgba(60, 20, 30, .08), 0 4px 14px rgba(60, 20, 30, .06);
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body: "Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #191113; --surface: #251a1d; --ink: #f4e9ea; --muted: #b29ea2; --line: #3a2a2f;
+    --wine: #d1566f; --wine-ink: #1a0d11; --wine-soft: #3b1f27; --ok: #5cc48a; --warn: #f08a62;
+    --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #191113; --surface: #251a1d; --ink: #f4e9ea; --muted: #b29ea2; --line: #3a2a2f;
+  --wine: #d1566f; --wine-ink: #1a0d11; --wine-soft: #3b1f27; --ok: #5cc48a; --warn: #f08a62;
+  --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { min-height: 100%; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px;
+  padding: 0 16px; padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px));
+  max-width: 900px; margin: 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--wine); outline-offset: 2px; }
+
+header.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--bg); padding-block: 14px 10px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; flex-direction: column; min-width: 0; }
+.brand h1 { font-family: var(--display); font-weight: 800; font-size: 1.55rem; margin: 0; letter-spacing: -.01em; line-height: 1.05; }
+.brand h1 span { color: var(--wine); }
+.brand small { color: var(--muted); font-size: .8rem; }
+.top-actions { display: flex; gap: 8px; }
+.chip-btn {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 999px;
+  padding: 8px 12px; font-size: .82rem; font-weight: 500; white-space: nowrap;
+}
+.chip-btn[aria-pressed="true"] { background: var(--wine); color: var(--wine-ink); border-color: var(--wine); }
+
+.nav { display: flex; gap: 8px; overflow-x: auto; padding-block: 10px 2px; scrollbar-width: none; }
+.nav a { flex: none; text-decoration: none; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; font-weight: 500; font-size: .88rem; }
+section.rayon { scroll-margin-top: 80px; }
+.day {
+  display: flex; gap: 16px; padding-block: 10px; color: var(--muted); font-size: .82rem; flex-wrap: wrap;
+}
+.day b { color: var(--ink); font-weight: 700; }
+
+section.rayon { padding-block: 10px; }
+section.rayon h2 {
+  font-family: var(--display); font-weight: 600; font-size: .78rem; text-transform: uppercase;
+  letter-spacing: .12em; color: var(--muted); margin: 6px 0 10px;
+}
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 560px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 820px) { .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+.tile {
+  position: relative; text-align: left; border: 1.5px solid var(--line); background: var(--surface);
+  border-radius: 14px; padding: 14px 12px 12px; min-height: 96px; box-shadow: var(--shadow);
+  display: flex; flex-direction: column; justify-content: space-between; gap: 8px;
+  user-select: none; touch-action: manipulation; transition: transform .08s ease, border-color .15s;
+}
+.tile:active { transform: scale(.97); }
+.tile.has { border-color: var(--wine); background: var(--wine-soft); }
+.tile .name { font-weight: 700; font-size: 1rem; line-height: 1.2; padding-right: 34px; overflow-wrap: anywhere; }
+.tile .desc { font-size: .74rem; color: var(--muted); line-height: 1.25; }
+.tile .price { font-family: var(--display); font-weight: 600; font-size: 1.05rem; color: var(--wine); }
+.tile .qty {
+  position: absolute; top: 10px; right: 10px; min-width: 30px; height: 30px; border-radius: 999px;
+  background: var(--wine); color: var(--wine-ink); font-weight: 700; display: grid; place-items: center;
+  padding: 0 8px; font-size: .95rem;
+}
+.tile .minus {
+  position: absolute; bottom: 8px; right: 8px; width: 40px; height: 40px; border-radius: 10px;
+  border: 1px solid var(--wine); background: var(--surface); color: var(--wine); font-size: 1.4rem; line-height: 1;
+  display: grid; place-items: center;
+}
+.tile.add { border-style: dashed; box-shadow: none; background: transparent; align-items: center; justify-content: center; color: var(--muted); font-weight: 500; }
+.editing .tile:not(.add)::after {
+  content: "Modifier"; position: absolute; top: 10px; right: 10px; font-size: .7rem; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; background: var(--bg);
+}
+
+/* Barre du bas */
+.bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+  background: var(--surface); border-top: 1px solid var(--line);
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -6px 20px rgba(40, 10, 20, .08);
+}
+.bar-in { max-width: 868px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+.bar .sum { flex: 1; min-width: 0; }
+.bar .sum small { display: block; color: var(--muted); font-size: .8rem; }
+.bar .sum strong { font-family: var(--display); font-weight: 800; font-size: 1.9rem; line-height: 1; }
+.btn {
+  border: 0; border-radius: 12px; padding: 14px 18px; font-weight: 700; font-size: 1rem;
+  background: var(--wine); color: var(--wine-ink); min-height: 52px;
+}
+.btn:disabled { opacity: .4; cursor: default; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.btn.ok { background: var(--ok); color: var(--wine-ink); }
+
+/* Feuille d'addition */
+.scrim { position: fixed; inset: 0; background: rgba(20, 8, 12, .45); z-index: 20; }
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; max-height: 92%;
+  background: var(--bg); border-radius: 20px 20px 0 0; overflow-y: auto;
+  padding: 8px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  animation: up .2s ease-out;
+}
+.sheet-in { max-width: 620px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+@keyframes up { from { transform: translateY(30px); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .sheet { animation: none; } .tile { transition: none; } }
+.grab { width: 42px; height: 5px; border-radius: 3px; background: var(--line); margin: 4px auto 0; }
+.sheet h3 { font-family: var(--display); font-weight: 800; font-size: 1.35rem; margin: 0; }
+.ticket { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 6px 14px; }
+.ticket .row { display: grid; grid-template-columns: 2.2em 1fr auto; gap: 8px; padding-block: 9px; border-bottom: 1px dashed var(--line); align-items: baseline; }
+.ticket .row:last-child { border-bottom: 0; }
+.ticket .row .q { font-weight: 700; color: var(--wine); }
+.ticket .row .l { min-width: 0; overflow-wrap: anywhere; }
+.ticket .row .l small { color: var(--muted); display: block; font-size: .75rem; }
+.ticket .total { display: flex; justify-content: space-between; align-items: baseline; padding-block: 12px 8px; border-top: 2px solid var(--ink); margin-top: 4px; }
+.ticket .total span { font-weight: 700; text-transform: uppercase; letter-spacing: .08em; font-size: .8rem; }
+.ticket .total strong { font-family: var(--display); font-size: 2rem; font-weight: 800; }
+
+.label { font-size: .78rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 700; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.seg button { border: 1.5px solid var(--line); background: var(--surface); border-radius: 12px; padding: 12px 6px; font-weight: 700; min-height: 48px; }
+.seg button[aria-pressed="true"] { border-color: var(--wine); background: var(--wine-soft); color: var(--wine); }
+.cash { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.cash button { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; min-height: 48px; font-weight: 700; }
+.given { display: flex; gap: 8px; align-items: center; }
+.given input { flex: 1; min-width: 0; font: inherit; font-size: 1.2rem; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.change { display: flex; justify-content: space-between; align-items: baseline; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.change strong { font-family: var(--display); font-size: 1.6rem; }
+.change.pos strong { color: var(--ok); }
+.change.neg strong { color: var(--warn); }
+.actions { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
+
+/* Choix de variante */
+.opts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+@media (min-width: 520px) { .opts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.opt { display: flex; gap: 6px; min-width: 0; }
+.opt-add {
+  position: relative; flex: 1; min-width: 0; min-height: 56px; text-align: left; padding: 12px 44px 12px 14px;
+  border: 1.5px solid var(--line); background: var(--surface); border-radius: 14px; font-weight: 700; font-size: 1.05rem;
+}
+.opt.has .opt-add { border-color: var(--wine); background: var(--wine-soft); }
+.opt-add .qty {
+  position: absolute; top: 50%; right: 10px; transform: translateY(-50%); min-width: 28px; height: 28px; border-radius: 999px;
+  background: var(--wine); color: var(--wine-ink); display: grid; place-items: center; font-size: .9rem; padding: 0 7px;
+}
+.opt-minus { flex: none; width: 44px; border-radius: 12px; border: 1px solid var(--wine); background: var(--surface); color: var(--wine); font-size: 1.4rem; }
+.opt-price { font-weight: 500; color: var(--muted); font-size: .85rem; margin-left: 6px; }
+.tile .desc:empty { display: none; }
+
+/* Formulaire produit */
+.form { display: flex; flex-direction: column; gap: 12px; }
+.form label { display: flex; flex-direction: column; gap: 6px; font-weight: 500; font-size: .9rem; }
+.form input, .form select { font: inherit; font-size: 1.05rem; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.danger { color: var(--warn); background: transparent; border: 1px solid var(--warn); }
+
+.hist { font-size: .85rem; }
+.hist .row { display: flex; justify-content: space-between; padding-block: 8px; border-bottom: 1px dashed var(--line); gap: 10px; }
+.hist .row span:first-child { color: var(--muted); }
+.note { color: var(--muted); font-size: .8rem; line-height: 1.4; margin: 0; }
+
+.toast {
+  position: fixed; left: 50%; bottom: calc(100px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-weight: 500; z-index: 30;
+  font-size: .9rem; white-space: nowrap;
+}
+html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <h1>Caisse du <span>3T</span></h1>
+    <small>Théâtre · Apéro · Tapas — 40 rue Gabriel Péri</small>
+  </div>
+  <div class="top-actions">
+    <button class="chip-btn" id="btn-hist" type="button">Soirée</button>
+    <button class="chip-btn" id="btn-edit" type="button" aria-pressed="false">Modifier la carte</button>
+  </div>
+</header>
+
+<nav class="nav" id="nav" aria-label="Rayons"></nav>
+<div class="day" id="day"></div>
+<main id="menu"></main>
+
+<div class="bar">
+  <div class="bar-in">
+    <div class="sum">
+      <small id="bar-count">Commande vide</small>
+      <strong id="bar-total">0,00 €</strong>
+    </div>
+    <button class="btn ghost" id="btn-clear" type="button">Vider</button>
+    <button class="btn" id="btn-pay" type="button">Addition</button>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true"><div class="sheet-in" id="sheet-in"></div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+  const RAYONS = ["Ardoises", "Vins", "Bières", "Softs", "Divers"];
+  const MENU_VERSION = 5;
+  const SIROPS = ["Menthe", "Pêche", "Citron", "Fraise", "Grenadine", "Cassis"];
+  const DEFAULT_MENU = [
+    { id: "a1", cat: "Ardoises", name: "Ardoise fromage", desc: "Simple", price: 14 },
+    { id: "a2", cat: "Ardoises", name: "Ardoise charcuterie", desc: "Simple", price: 14 },
+    { id: "a3", cat: "Ardoises", name: "Ardoise veggie", desc: "Simple", price: 14 },
+    { id: "a4", cat: "Ardoises", name: "Ardoise mixte", desc: "Fromage + charcuterie", price: 26 },
+    { id: "a5", cat: "Ardoises", name: "Ardoise des copains", desc: "Guacamole, labneh, piquillos, jambon, fromage", price: 26 },
+    { id: "b1", cat: "Vins", name: "Verre de rouge", desc: "", price: 5 },
+    { id: "b2", cat: "Vins", name: "Verre de blanc", desc: "", price: 5 },
+    { id: "b3", cat: "Vins", name: "Verre de rosé", desc: "", price: 5 },
+    { id: "v4", cat: "Vins", name: "Verre de moelleux", desc: "", price: 5 },
+    { id: "b7", cat: "Vins", name: "Bouteille de vin", desc: "Choisir la couleur", price: 25, opts: ["Rouge", "Rosé", "Blanc sec", "Moelleux"] },
+    { id: "k1", cat: "Bières", name: "Blonde", desc: "Demi 25 cl", price: 5 },
+    { id: "k2", cat: "Bières", name: "Blonde", desc: "Pinte 50 cl", price: 9 },
+    { id: "k3", cat: "Bières", name: "Blanche", desc: "Demi 25 cl", price: 5 },
+    { id: "k4", cat: "Bières", name: "Blanche", desc: "Pinte 50 cl", price: 9 },
+    { id: "k5", cat: "Bières", name: "IPA", desc: "Demi 25 cl", price: 5 },
+    { id: "k6", cat: "Bières", name: "IPA", desc: "Pinte 50 cl", price: 9 },
+    { id: "k7", cat: "Bières", name: "Panaché", desc: "Demi 25 cl", price: 5 },
+    { id: "k8", cat: "Bières", name: "Panaché", desc: "Pinte 50 cl", price: 9 },
+    { id: "k9", cat: "Bières", name: "Monaco", desc: "Demi 25 cl", price: 5 },
+    { id: "k10", cat: "Bières", name: "Monaco", desc: "Pinte 50 cl", price: 9 },
+    { id: "s1", cat: "Softs", name: "Coca-Cola", desc: "", price: 5 },
+    { id: "s2", cat: "Softs", name: "Coca-Cola Zéro", desc: "", price: 5 },
+    { id: "s3", cat: "Softs", name: "Orangina", desc: "", price: 5 },
+    { id: "s11", cat: "Softs", name: "Fuze Tea", desc: "", price: 5 },
+    { id: "s5", cat: "Softs", name: "Limonade", desc: "", price: 5 },
+    { id: "s12", cat: "Softs", name: "Diabolo", desc: "Choisir le sirop", price: 5, opts: SIROPS },
+    { id: "s10", cat: "Softs", name: "Sirop à l'eau", desc: "Choisir le sirop", price: 5, opts: SIROPS },
+    { id: "s7", cat: "Softs", name: "Perrier", desc: "Nature ou avec sirop", price: 5, opts: ["Nature", ...SIROPS], optPrices: Object.fromEntries(SIROPS.map(x => [x, 5.5])) },
+    { id: "s14", cat: "Softs", name: "Corona 0,0", desc: "Sans alcool", price: 5 },
+    { id: "s15", cat: "Softs", name: "Jus de fruits", desc: "Choisir le parfum", price: 5, opts: ["Abricot", "Ananas", "Orange", "Tomate"] },
+  ];
+  // Anciens produits remplacés par une version plus détaillée
+  const RETIRED = ["b4", "b5", "b6", "s4", "s8", "s9", "s6", "s13"];
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  };
+
+  let menu = store.get("3t-menu", null) || DEFAULT_MENU.map(x => ({ ...x }));
+  // Mise à jour de la carte : ajoute les nouveaux produits sans écraser les prix déjà modifiés
+  if (store.get("3t-menu-v", 1) < MENU_VERSION) {
+    menu = menu.filter(m => !RETIRED.includes(m.id));
+    DEFAULT_MENU.forEach(d => {
+      const cur = menu.find(m => m.id === d.id);
+      if (cur) { cur.cat = d.cat; if (d.opts && !cur.opts) { cur.opts = d.opts; cur.optPrices = d.optPrices; cur.desc = d.desc; } }
+      else menu.push({ ...d });
+    });
+    menu.sort((a, b) => {
+      const ia = DEFAULT_MENU.findIndex(d => d.id === a.id), ib = DEFAULT_MENU.findIndex(d => d.id === b.id);
+      return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
+    });
+    let old = store.get("3t-order", {});
+    Object.keys(old).forEach(k => { if (RETIRED.includes(k.split("::")[0])) delete old[k]; });
+    // Un produit devenu "à choix" : la commande en cours passe sur son premier choix
+    Object.keys(old).forEach(k => {
+      const m = menu.find(x => x.id === k);
+      if (m && m.opts && m.opts.length) { const nk = k + "::" + m.opts[0]; old[nk] = (old[nk] || 0) + old[k]; delete old[k]; }
+    });
+    store.set("3t-order", old);
+    store.set("3t-menu-v", MENU_VERSION);
+  }
+  let order = store.get("3t-order", {});       // id -> qty
+  let sales = store.get("3t-sales", []);        // { t, total, mode, lines }
+  let editing = false;
+
+  const $ = s => document.querySelector(s);
+  const eur = n => (Math.round(n * 100) / 100).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const slug = c => c.normalize("NFD").replace(/[^A-Za-z]/g, "").toLowerCase();
+  const byId = id => menu.find(m => m.id === id);
+
+  const priceOf = (m, opt) => (opt && m.optPrices && m.optPrices[opt] != null) ? m.optPrices[opt] : m.price;
+  function priceRange(m) {
+    const ps = (m.opts || []).map(o => priceOf(m, o));
+    const lo = Math.min(m.price, ...ps), hi = Math.max(m.price, ...ps);
+    return lo === hi ? eur(lo) : `${eur(lo)} – ${eur(hi)}`;
+  }
+  // Une ligne de commande par produit et par choix (clé "id" ou "id::choix")
+  function lines() {
+    return Object.entries(order).map(([key, q]) => {
+      const [id, opt] = key.split("::");
+      const item = byId(id);
+      return { key, item, opt, q, price: item ? priceOf(item, opt) : 0 };
+    }).filter(l => l.item && l.q > 0);
+  }
+  const label = l => l.item.name + (l.item.cat === "Bières" && l.item.desc ? " · " + l.item.desc : "") + (l.opt ? " · " + l.opt : "");
+  const qtyOf = id => lines().filter(l => l.item.id === id).reduce((s, l) => s + l.q, 0);
+  function bump(key, d) {
+    order[key] = Math.max(0, (order[key] || 0) + d);
+    if (!order[key]) delete order[key];
+    buzz(); save(); render();
+  }
+  const total = () => lines().reduce((s, l) => s + l.q * l.price, 0);
+  const count = () => lines().reduce((s, l) => s + l.q, 0);
+
+  function save() { store.set("3t-menu", menu); store.set("3t-order", order); store.set("3t-sales", sales); }
+
+  function buzz() { try { navigator.vibrate && navigator.vibrate(12); } catch {} }
+
+  function toast(msg) {
+    const t = $("#toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toast.h); toast.h = setTimeout(() => t.hidden = true, 1800);
+  }
+
+  function renderDay() {
+    const today = new Date().toDateString();
+    const s = sales.filter(x => new Date(x.t).toDateString() === today);
+    const sum = s.reduce((a, x) => a + x.total, 0);
+    $("#day").innerHTML = s.length
+      ? `<span>Ce soir : <b>${s.length}</b> commande${s.length > 1 ? "s" : ""}</span><span>Encaissé : <b>${eur(sum)}</b></span>`
+      : `<span>Touchez un produit pour l'ajouter. Le bouton − retire une unité.</span>`;
+  }
+
+  function renderMenu() {
+    const main = $("#menu");
+    main.classList.toggle("editing", editing);
+    const all = [...RAYONS, ...menu.map(m => m.cat).filter(c => !RAYONS.includes(c))];
+    const cats = [...new Set(all)].filter(c => editing || menu.some(m => m.cat === c));
+    $("#nav").innerHTML = cats.map(c => `<a href="#r-${slug(c)}">${c}</a>`).join("");
+    main.innerHTML = cats.map(cat => {
+      const items = menu.filter(m => m.cat === cat);
+      const tiles = items.map(m => {
+        const q = qtyOf(m.id);
+        return `<button type="button" class="tile${q && !editing ? " has" : ""}" data-id="${m.id}" aria-label="${esc(m.name)}, ${eur(m.price)}${q ? ", " + q + " en commande" : ""}">
+          <div>
+            <div class="name">${esc(m.name)}</div>
+            ${m.desc ? `<div class="desc">${esc(m.desc)}</div>` : ""}
+          </div>
+          <div class="price">${priceRange(m)}</div>
+          ${q && !editing ? `<span class="qty">${q}</span><span class="minus" data-minus="${m.id}" role="button" aria-label="Retirer un ${esc(m.name)}">−</span>` : ""}
+        </button>`;
+      }).join("");
+      const add = editing ? `<button type="button" class="tile add" data-add="${cat}">+ Ajouter un produit</button>` : "";
+      return `<section class="rayon" id="r-${slug(cat)}"><h2>${cat}</h2><div class="grid">${tiles}${add}</div></section>`;
+    }).join("");
+  }
+
+  function renderBar() {
+    const c = count();
+    $("#bar-count").textContent = c ? `${c} article${c > 1 ? "s" : ""}` : "Commande vide";
+    $("#bar-total").textContent = eur(total());
+    $("#btn-pay").disabled = !c;
+    $("#btn-clear").disabled = !c;
+  }
+
+  function render() { renderMenu(); renderBar(); renderDay(); }
+
+  // Tuiles
+  $("#menu").addEventListener("click", e => {
+    const minus = e.target.closest("[data-minus]");
+    if (minus) {
+      const id = minus.dataset.minus;
+      if (byId(id).opts) openPick(id); else bump(id, -1);
+      return;
+    }
+    const add = e.target.closest("[data-add]");
+    if (add) { openEdit(null, add.dataset.add); return; }
+    const tile = e.target.closest("[data-id]");
+    if (!tile) return;
+    if (editing) { openEdit(tile.dataset.id); return; }
+    const m = byId(tile.dataset.id);
+    if (m.opts && m.opts.length) openPick(m.id); else bump(m.id, 1);
+  });
+
+  // Choix de la variante (couleur du vin, sirop, parfum…)
+  let pickId = null;
+  function openPick(id) {
+    pickId = id;
+    const m = byId(id);
+    openSheet(`
+      <h3>${esc(m.name)}</h3>
+      <p class="note">${priceRange(m)} · touchez un choix pour l'ajouter</p>
+      <div class="opts">${m.opts.map(o => {
+        const q = order[id + "::" + o] || 0;
+        return `<div class="opt${q ? " has" : ""}">
+          <button type="button" class="opt-add" data-pick="${esc(o)}">${esc(o)}${priceOf(m, o) !== m.price ? ` <small class="opt-price">${eur(priceOf(m, o))}</small>` : ""}${q ? `<span class="qty">${q}</span>` : ""}</button>
+          ${q ? `<button type="button" class="opt-minus" data-unpick="${esc(o)}" aria-label="Retirer un ${esc(o)}">−</button>` : ""}
+        </div>`;
+      }).join("")}</div>
+      <button class="btn ghost" type="button" data-close>Fermer</button>`);
+  }
+
+  // Vider (avec confirmation intégrée)
+  $("#btn-clear").addEventListener("click", e => {
+    const b = e.currentTarget;
+    if (b.dataset.armed) {
+      order = {}; save(); render(); delete b.dataset.armed; b.textContent = "Vider"; toast("Commande vidée");
+    } else {
+      b.dataset.armed = "1"; b.textContent = "Sûr ?";
+      setTimeout(() => { delete b.dataset.armed; b.textContent = "Vider"; }, 2500);
+    }
+  });
+
+  $("#btn-edit").addEventListener("click", e => {
+    editing = !editing; e.currentTarget.setAttribute("aria-pressed", editing);
+    e.currentTarget.textContent = editing ? "Terminer" : "Modifier la carte";
+    render();
+  });
+
+  // Feuille
+  function openSheet(html) {
+    $("#sheet-in").innerHTML = `<div class="grab"></div>` + html;
+    $("#sheet").hidden = false; $("#scrim").hidden = false;
+  }
+  function closeSheet() { $("#sheet").hidden = true; $("#scrim").hidden = true; }
+  $("#scrim").addEventListener("click", closeSheet);
+
+  // Addition
+  let payMode = "Espèces", given = 0;
+  $("#btn-pay").addEventListener("click", () => { payMode = "Espèces"; given = 0; renderPay(); });
+
+  function renderPay() {
+    const t = total();
+    const rows = lines().map(l => `<div class="row"><span class="q">${l.q}×</span><span class="l">${esc(label(l))}<small>${eur(l.price)} l'unité</small></span><span>${eur(l.q * l.price)}</span></div>`).join("");
+    const diff = given - t;
+    const cashBlock = payMode === "Espèces" ? `
+      <div class="label">Somme reçue</div>
+      <div class="cash">
+        ${[t, 20, 50, 100].map((v, i) => `<button type="button" data-cash="${v}">${i === 0 ? "Compte juste" : v + " €"}</button>`).join("")}
+        ${[5, 10].map(v => `<button type="button" data-cashadd="${v}">+${v} €</button>`).join("")}
+        <button type="button" data-cashadd="2">+2 €</button>
+        <button type="button" data-cash="0">Effacer</button>
+      </div>
+      <div class="given"><input id="given" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Montant donné" value="${given || ""}"></div>
+      <div class="change ${given ? (diff >= 0 ? "pos" : "neg") : ""}">
+        <span>${given && diff < 0 ? "Il manque" : "À rendre"}</span>
+        <strong>${given ? eur(Math.abs(diff)) : "—"}</strong>
+      </div>` : "";
+    openSheet(`
+      <h3>Addition</h3>
+      <div class="ticket">${rows}
+        <div class="total"><span>Total</span><strong>${eur(t)}</strong></div>
+      </div>
+      <div class="label">Paiement</div>
+      <div class="seg">${["Espèces", "Chèque", "Tickets tapas"].map(m => `<button type="button" data-mode="${m}" aria-pressed="${m === payMode}">${m}</button>`).join("")}</div>
+      ${cashBlock}
+      <div class="actions">
+        <button class="btn ghost" type="button" data-close>Retour</button>
+        <button class="btn ok" type="button" data-done ${payMode === "Espèces" && given && diff < 0 ? "disabled" : ""}>Encaisser ${eur(t)}</button>
+      </div>`);
+    const inp = $("#given");
+    if (inp) inp.addEventListener("change", () => { given = parseFloat(inp.value.replace(",", ".")) || 0; renderPay(); });
+  }
+
+  $("#sheet").addEventListener("click", e => {
+    const t = e.target.closest("button"); if (!t) return;
+    if (t.hasAttribute("data-close")) return closeSheet();
+    if (t.dataset.pick) { bump(pickId + "::" + t.dataset.pick, 1); closeSheet(); toast(`${byId(pickId).name} · ${t.dataset.pick}`); return; }
+    if (t.dataset.unpick) { bump(pickId + "::" + t.dataset.unpick, -1); return openPick(pickId); }
+    if (t.dataset.mode) { payMode = t.dataset.mode; return renderPay(); }
+    if (t.dataset.cash !== undefined) { given = +t.dataset.cash; return renderPay(); }
+    if (t.dataset.cashadd) { given = Math.round((given + +t.dataset.cashadd) * 100) / 100; return renderPay(); }
+    if (t.hasAttribute("data-done")) {
+      const tot = total();
+      sales.push({ t: Date.now(), total: tot, mode: payMode, lines: lines().map(l => ({ n: label(l), q: l.q, p: l.price })) });
+      order = {}; save(); closeSheet(); render(); toast(`Encaissé : ${eur(tot)}`);
+      return;
+    }
+    if (t.hasAttribute("data-save")) return saveEdit();
+    if (t.hasAttribute("data-del")) return delEdit(t);
+    if (t.hasAttribute("data-reset-day")) return resetDay(t);
+    if (t.hasAttribute("data-reset-menu")) return resetMenu(t);
+  });
+
+  // Édition produit
+  let editId = null;
+  function openEdit(id, cat) {
+    editId = id;
+    const m = id ? byId(id) : { name: "", desc: "", price: "", cat };
+    openSheet(`
+      <h3>${id ? "Modifier le produit" : "Nouveau produit"}</h3>
+      <form class="form" id="pform">
+        <label>Nom<input id="f-name" required value="${esc(m.name)}" placeholder="ex. Café"></label>
+        <label>Détail (facultatif)<input id="f-desc" value="${esc(m.desc || "")}"></label>
+        <label>Prix (€)<input id="f-price" type="number" inputmode="decimal" step="0.10" min="0" required value="${m.price}"></label>
+        <label>Choix proposés (séparés par des virgules, facultatif)<input id="f-opts" value="${esc((m.opts || []).map(o => m.optPrices && m.optPrices[o] != null ? `${o} = ${m.optPrices[o].toFixed(2).replace(".", ",")}` : o).join(", "))}" placeholder="ex. Nature, Menthe = 5,50"></label>
+        <p class="note">Pour un choix plus cher, ajoutez son prix : « Menthe = 5,50 ».</p>
+        <label>Rayon<select id="f-cat">${RAYONS.map(c => `<option${c === m.cat ? " selected" : ""}>${c}</option>`).join("")}</select></label>
+      </form>
+      <div class="actions">
+        ${id ? `<button class="btn danger" type="button" data-del>Supprimer</button>` : `<button class="btn ghost" type="button" data-close>Annuler</button>`}
+        <button class="btn" type="button" data-save>Enregistrer</button>
+      </div>
+      <button class="btn ghost" type="button" data-reset-menu>Remettre la carte d'origine</button>`);
+    $("#pform").addEventListener("submit", e => { e.preventDefault(); saveEdit(); });
+  }
+  function saveEdit() {
+    const name = $("#f-name").value.trim();
+    const price = parseFloat($("#f-price").value.replace(",", "."));
+    if (!name || isNaN(price)) { toast("Indiquez un nom et un prix"); return; }
+    // Les virgules décimales ("5,50") ne coupent pas un choix : on découpe sur une virgule suivie d'un espace ou d'une lettre
+    const raw = $("#f-opts").value.split(/,(?!\d)/).map(x => x.trim()).filter(Boolean);
+    const opts = [], optPrices = {};
+    raw.forEach(r => {
+      const [n, pr] = r.split("=").map(x => x.trim());
+      if (!n) return;
+      opts.push(n);
+      const v = parseFloat((pr || "").replace(",", "."));
+      if (!isNaN(v)) optPrices[n] = v;
+    });
+    const data = { name, price, desc: $("#f-desc").value.trim(), cat: $("#f-cat").value,
+      opts: opts.length ? opts : undefined, optPrices: Object.keys(optPrices).length ? optPrices : undefined };
+    if (editId) Object.assign(byId(editId), data);
+    else menu.push({ id: "p" + Date.now().toString(36), ...data });
+    save(); closeSheet(); render(); toast("Carte mise à jour");
+  }
+  function delEdit(b) {
+    if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = "Confirmer"; return; }
+    menu = menu.filter(m => m.id !== editId);
+    Object.keys(order).forEach(k => { if (k.split("::")[0] === editId) delete order[k]; });
+    save(); closeSheet(); render(); toast("Produit supprimé");
+  }
+  function resetMenu(b) {
+    if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = "Confirmer : remettre la carte d'origine"; return; }
+    menu = DEFAULT_MENU.map(x => ({ ...x })); order = {};
+    save(); closeSheet(); render(); toast("Carte d'origine remise");
+  }
+
+  // Soirée
+  $("#btn-hist").addEventListener("click", () => {
+    const today = new Date().toDateString();
+    const s = sales.filter(x => new Date(x.t).toDateString() === today);
+    const sum = s.reduce((a, x) => a + x.total, 0);
+    const byMode = {};
+    s.forEach(x => byMode[x.mode] = (byMode[x.mode] || 0) + x.total);
+    const byItem = {};
+    s.forEach(x => x.lines.forEach(l => byItem[l.n] = (byItem[l.n] || 0) + l.q));
+    const time = t => new Date(t).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    openSheet(`
+      <h3>Soirée en cours</h3>
+      <div class="ticket">
+        ${Object.entries(byMode).map(([m, v]) => `<div class="row"><span></span><span class="l">${m}</span><span>${eur(v)}</span></div>`).join("") || `<p class="note" style="padding-block:10px">Aucune commande encaissée aujourd'hui.</p>`}
+        <div class="total"><span>${s.length} commande${s.length > 1 ? "s" : ""}</span><strong>${eur(sum)}</strong></div>
+      </div>
+      ${Object.keys(byItem).length ? `<div class="label">Produits vendus</div><div class="ticket">${Object.entries(byItem).sort((a, b) => b[1] - a[1]).map(([n, q]) => `<div class="row"><span class="q">${q}×</span><span class="l">${esc(n)}</span><span></span></div>`).join("")}</div>` : ""}
+      ${s.length ? `<div class="label">Détail</div><div class="hist">${s.slice().reverse().map(x => `<div class="row"><span>${time(x.t)} · ${x.mode}</span><span>${eur(x.total)}</span></div>`).join("")}</div>` : ""}
+      <p class="note">Les ventes sont gardées sur ce téléphone uniquement.</p>
+      <div class="actions">
+        <button class="btn ghost" type="button" data-close>Fermer</button>
+        <button class="btn danger" type="button" data-reset-day ${s.length ? "" : "disabled"}>Clôturer la soirée</button>
+      </div>`);
+  });
+  function resetDay(b) {
+    if (!b.dataset.armed) { b.dataset.armed = "1"; b.textContent = "Confirmer la clôture"; return; }
+    const today = new Date().toDateString();
+    sales = sales.filter(x => new Date(x.t).toDateString() !== today);
+    save(); closeSheet(); render(); toast("Soirée clôturée");
+  }
+
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
+  render();
+})();
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
