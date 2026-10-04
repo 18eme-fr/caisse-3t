@@ -355,16 +355,16 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
 <script>
 (() => {
   const RAYONS = ["Ardoises", "Vins", "Bières", "Cocktails", "Softs", "Divers"];
-  const MENU_VERSION = 13;
+  const MENU_VERSION = 14;
   const SIROPS = ["Menthe", "Pêche", "Citron", "Fraise", "Grenadine", "Cassis"];
   const DEFAULT_MENU = [
     { id: "a1", cat: "Ardoises", name: "Ardoise fromage", desc: "Simple", price: 14 },
     { id: "a2", cat: "Ardoises", name: "Ardoise charcuterie", desc: "Simple", price: 14 },
-    { id: "a3", cat: "Ardoises", name: "Ardoise veggie", desc: "Simple", price: 14 },
     { id: "a4", cat: "Ardoises", name: "Ardoise mixte", desc: "Fromage + charcuterie", price: 26 },
+    { id: "a5", cat: "Ardoises", name: "Ardoise des copains", desc: "Guacamole, labneh, piquillos, jambon, fromage", price: 26 },
     { id: "a6", cat: "Ardoises", name: "Petite rillette", desc: "", price: 7 },
     { id: "a7", cat: "Ardoises", name: "Grande rillette", desc: "", price: 11 },
-    { id: "a5", cat: "Ardoises", name: "Ardoise des copains", desc: "Guacamole, labneh, piquillos, jambon, fromage", price: 26 },
+    { id: "a3", cat: "Ardoises", name: "Ardoise veggie", desc: "Simple", price: 14 },
     { id: "b1", cat: "Vins", name: "Verre de rouge", desc: "", price: 5 },
     { id: "b2", cat: "Vins", name: "Verre de blanc", desc: "", price: 5 },
     { id: "b3", cat: "Vins", name: "Verre de rosé", desc: "", price: 5 },
@@ -1171,7 +1171,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   if (!owner) openOwner(true);
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 39;
+const APP_VERSION = 40;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
