@@ -285,13 +285,15 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
 <script>
 (() => {
   const RAYONS = ["Ardoises", "Vins", "Bières", "Cocktails", "Softs", "Divers"];
-  const MENU_VERSION = 8;
+  const MENU_VERSION = 9;
   const SIROPS = ["Menthe", "Pêche", "Citron", "Fraise", "Grenadine", "Cassis"];
   const DEFAULT_MENU = [
     { id: "a1", cat: "Ardoises", name: "Ardoise fromage", desc: "Simple", price: 14 },
     { id: "a2", cat: "Ardoises", name: "Ardoise charcuterie", desc: "Simple", price: 14 },
     { id: "a3", cat: "Ardoises", name: "Ardoise veggie", desc: "Simple", price: 14 },
     { id: "a4", cat: "Ardoises", name: "Ardoise mixte", desc: "Fromage + charcuterie", price: 26 },
+    { id: "a6", cat: "Ardoises", name: "Petite rillette", desc: "", price: 7 },
+    { id: "a7", cat: "Ardoises", name: "Grande rillette", desc: "", price: 11 },
     { id: "a5", cat: "Ardoises", name: "Ardoise des copains", desc: "Guacamole, labneh, piquillos, jambon, fromage", price: 26 },
     { id: "b1", cat: "Vins", name: "Verre de rouge", desc: "", price: 5 },
     { id: "b2", cat: "Vins", name: "Verre de blanc", desc: "", price: 5 },
@@ -391,12 +393,14 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
     notes.push(n); switchNote(n.id);
     toast(n.name + " ouverte");
   }
-  // Ferme la note active (encaissée ou supprimée) et ouvre une note vierge,
-  // pour ne pas ajouter par erreur des produits sur la note d'un autre client
+  // Supprime la note active (encaissée ou supprimée). S'il reste d'autres notes,
+  // on renvoie true : l'appelant affiche la liste pour choisir la suivante,
+  // au lieu de basculer sans prévenir sur la note d'un autre client.
   function closeNote() {
     notes = notes.filter(n => n.id !== activeId);
-    const n = { id: "n" + Date.now().toString(36), name: nextNoteName(), order: {} };
-    notes.push(n); activeId = n.id; order = n.order;
+    if (!notes.length) notes.push({ id: "n" + Date.now().toString(36), name: "Note 1", order: {} });
+    activeId = notes[notes.length - 1].id; order = active().order;
+    return notes.length > 1 || !isEmpty(active());
   }
   let sales = store.get("3t-sales", []);        // { t, total, mode, lines }
   let closed = store.get("3t-closed", []);      // soirées clôturées : { day, total, count, byMode, byItem }
@@ -570,9 +574,9 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   $("#btn-note-add").addEventListener("click", newNote);
 
   // Toutes les notes ouvertes, avec leur contenu : toucher une note l'affiche
-  function openNotesList() {
+  function openNotesList(title) {
     openSheet(`
-      <h3>Notes ouvertes</h3>
+      <h3>${typeof title === "string" ? title : "Notes ouvertes"}</h3>
       <div class="note-list">${notes.map(n => {
         const ls = Object.entries(n.order).filter(([, q]) => q > 0).map(([key, q]) => {
           const [id, opt] = key.split("::"); const m = byId(id);
@@ -634,7 +638,8 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   function delNote(b) {
     if (!isEmpty(active()) && !b.dataset.armed) { b.dataset.armed = "1"; b.textContent = "Confirmer : la commande sera perdue"; return; }
     const name = active().name;
-    closeNote(); save(); closeSheet(); render(); toast(name + " supprimée");
+    const others = closeNote(); save(); closeSheet(); render(); toast(name + " supprimée");
+    if (others) openNotesList("Choisir la note suivante");
   }
 
   // Vider (avec confirmation intégrée)
@@ -725,7 +730,8 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
       if (!tot && !count()) return closeSheet();
       const name = active().name;
       sales.push({ t: Date.now(), total: tot, mode: payMode, note: name, lines: lines().map(l => ({ n: label(l), q: l.q, p: l.price })) });
-      closeNote(); save(); closeSheet(); render(); toast(`${name} encaissée : ${eur(tot)}`);
+      const others = closeNote(); save(); closeSheet(); render(); toast(`${name} encaissée : ${eur(tot)}`);
+      if (others) openNotesList("Choisir la note suivante");
       return;
     }
     if (t.hasAttribute("data-save")) return saveEdit();
@@ -871,7 +877,7 @@ html { padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
   render();
 })();
 // Numéro de cette version de l'appli : doit être identique à celui de version.json
-const APP_VERSION = 12;
+const APP_VERSION = 13;
 
 // Mise à jour automatique. À chaque ouverture et à chaque retour sur l'appli, on demande
 // version.json au réseau. Si le numéro publié est plus récent, on vide la copie locale
